@@ -1,0 +1,65 @@
+version: "3"
+services:
+  postgres:
+    image: postgres:16rc1-alpine3.18
+    container_name: LMR-postgres
+    environment:
+      - POSTGRES_USER=lmr
+      - POSTGRES_PASSWORD=lmrSecretDBPassword
+      - POSTGRES_DB=inventory
+    volumes:
+      - ./database:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+        - backend
+    restart: always
+    
+  python:
+    image: python:3.9.18-alpine3.18
+    container_name: LMR-python
+    volumes:
+      - ./scripts:/home/scripts
+    entrypoint: ["python3","/home/scripts/main.py"]
+    #healthcheck:
+    #  test: ["CMD", "exit", "0"]
+    #  interval: 10s
+    #  timeout: 5s
+    #  retries: 5
+    networks:
+        - backend
+        - frontend
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:mainline-alpine3.18
+    container_name: LMR-nginx
+    volumes:
+      - ./www:/var/run/www
+    ports:
+      - 80:80
+      - 443:443
+    #healthcheck:
+    #  test: ["CMD", "exit", "0"]
+    #  interval: 10s
+    #  timeout: 5s
+    #  retries: 5
+    networks:
+        - frontend
+    restart: always
+    depends_on:
+      python:
+        #condition: service_healthy
+        condition: service_started
+
+networks:
+  frontend:
+  backend:
