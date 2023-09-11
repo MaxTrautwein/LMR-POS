@@ -21,10 +21,10 @@ services:
     restart: always
     
   python:
-    image: python:3.9.18-alpine3.18
+    build: backend
     container_name: LMR-python
     volumes:
-      - ./scripts:/home/scripts
+      - ./backend/scripts:/home/scripts
     entrypoint: ["python3","/home/scripts/main.py"]
     #healthcheck:
     #  test: ["CMD", "exit", "0"]
