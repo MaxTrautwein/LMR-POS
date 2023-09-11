@@ -8,7 +8,8 @@ services:
       - POSTGRES_PASSWORD=lmrSecretDBPassword
       - POSTGRES_DB=inventory
     volumes:
-      - ./database:/var/lib/postgresql/data
+      - ./db/database:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
     ports:
       - 5432:5432
     healthcheck:
