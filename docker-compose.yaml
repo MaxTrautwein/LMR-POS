@@ -26,7 +26,9 @@ services:
     container_name: LMR-python
     volumes:
       - ./backend/scripts:/home/scripts
-    entrypoint: ["python3","/home/scripts/main.py"]
+    entrypoint: ["flask","--app", "main","run", "--host=0.0.0.0"]
+    ports:
+      - 127.0.0.1:5000:5000 # expose Flask to localehost
     #healthcheck:
     #  test: ["CMD", "exit", "0"]
     #  interval: 10s
@@ -44,10 +46,9 @@ services:
     image: nginx:mainline-alpine3.18
     container_name: LMR-nginx
     volumes:
-      - ./www:/var/run/www
+      - ./frontend/www:/usr/share/nginx/html
     ports:
       - 80:80
-      - 443:443
     #healthcheck:
     #  test: ["CMD", "exit", "0"]
     #  interval: 10s

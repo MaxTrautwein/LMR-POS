@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Kasse</title>
+    <link href="libs/5.3.2_dist_css_bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <script src="libs/5.3.2_dist_js_bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <script src="libs/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+
+<template id="itemRowTemplate">
+    <div class="row border item-row">
+        <div class="col" data-template="cnt"></div>
+        <div class="col" data-template="name"></div>
+        <div class="col" data-template="price"></div>
+        <div class="col" data-template="total"></div>
+    </div>
+</template>
+
+
+<div class="">
+    <div class="row">
+    <div id="Warenkorb" class="col">
+        <div class="row">
+            <div class="col">Menge</div>
+            <div class="col">Artikel</div>
+            <div class="col">Einzelpreis</div>
+            <div class="col">gesamptpreis</div>
+        </div>
+    </div>
+
+    <div id="Beinelemente" class="col-sm" >
+        <div class="">
+            <button type="button" class="btn btn-danger" onclick="Logout()">Logout</button>
+        </div>
+        <div class="">
+            <button type="button" class="btn btn-danger" onclick="RemoveLastItem()" >Artikel Stornieren</button>
+        </div>
+        <div class="">
+            <button type="button" class="btn btn-secondary" onclick="EmptyBasket()">Warenkorb leeren</button>
+        </div>
+        <div class="">
+            <button type="button" class="btn btn-success" onclick=" MakeSale()">Verkauf buchen</button>
+        </div>
+    </div>
+    </div>
+</div>
+
+
+<input id="hiddenInput" onblur="this.focus()" autofocus  style="border-color: transparent; color: transparent;"/>
+
+<script>
+    const ServerAddress = "http://127.0.0.1:5000"
+    var Basket_reference = $("#Warenkorb");
+    
+    var Warenkorb = [];
+
+    function httpGetAsync(theUrl, callback)
+    {
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.onreadystatechange = function() {
+            if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+                callback(xmlHttp.responseText);
+        }
+        xmlHttp.open("GET", theUrl, true); // true for asynchronous
+        xmlHttp.send(null);
+    }
+
+    //TODO Handle Invalid Data
+    function AddItem(barcode) {
+        httpGetAsync(ServerAddress + "/item" + "?code=" + barcode,AddItemCallback)
+    }
+
+    function AddItemCallback(data){
+        data = JSON.parse(data)
+
+        //Check if we already have that Thing
+        var matchingIndex = -1;
+        for (var i = 0; i < Warenkorb.length; i++){
+            if(Warenkorb[i]["id"] == data["id"]){
+                matchingIndex = i;
+                break;
+            }
+        }
+
+        if (matchingIndex >= 0){
+            //Increment cnt
+            Warenkorb[matchingIndex]["cnt"] = Warenkorb[matchingIndex]["cnt"] + 1;
+        }else {
+            data["cnt"] = 1;
+            Warenkorb.push(data);
+        }
+        UpdateWarenkorb();
+    }
+
+    //Draw / Re-Draw the Basket
+    function UpdateWarenkorb(){
+
+        $( ".item-row" ).remove();
+
+        for (var i = 0; i < Warenkorb.length; i++){
+            var item = Warenkorb[i];
+            var total = item["cnt"] * item["price"];
+            
+            //Prepare Template
+            var t = document.querySelector('#itemRowTemplate');
+            var clone = document.importNode(t.content, true); // where true means deep copy
+            var $row = $(clone);
+            $row.find("[data-template='cnt']").text(item["cnt"]);
+            $row.find("[data-template='name']").text(item["name"]);
+            $row.find("[data-template='price']").text(item["price"]);
+            $row.find("[data-template='total']").text(total);
+
+            Basket_reference.append($row)
+        }
+
+    }
+
+    function EmptyBasket(){
+        Warenkorb = []
+        UpdateWarenkorb();
+    }
+
+    //TODO Maybe add option to Subtract instead of total removal
+    function RemoveLastItem(){
+        Warenkorb.pop()
+        UpdateWarenkorb();
+    }
+
+    //Signal to the Backend that a Sale should be Made
+    function  MakeSale(){
+        //TODO Reduce the Information given to ID & cnt
+
+        var data =  JSON.stringify(Warenkorb);
+
+        fetch(ServerAddress + "/make_sale", {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: data
+        })
+            .then(response => response.json())
+            .then(response => console.log(JSON.stringify(response)));
+
+
+        //TODO Add other site for Rückgeld & Co
+        //TODO maybe check for success
+
+       // EmptyBasket();
+    }
+
+    function Logout(){
+        //TODO
+    }
+    function Handleinput(data){
+        if(data.startsWith('LMR-POS')){
+            switch (data){
+                case "LMR-POS-cancel":
+                    RemoveLastItem();
+                    break;
+                case "LMR-POS-Clear":
+                    EmptyBasket();
+                    break;
+                case "LMR-POS-Sale":
+                    MakeSale();
+                    break;
+                case "LMR-POS-Logout":
+                    Logout();
+                    break;
+                default:
+                    break;
+            }
+
+        }else {
+            AddItem(data)
+        }
+
+    }
+
+
+
+    //On Enter Key Trigger Add Item Call
+    //TODO Check the Data Is that even a Barcode ?!
+    var hiddenInput = document.getElementById("hiddenInput");
+    hiddenInput.addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            Handleinput(hiddenInput.value)
+            hiddenInput.value = '';
+        }
+    });
+
+</script>
+
+</body>
+</html>

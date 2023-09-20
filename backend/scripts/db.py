@@ -4,6 +4,27 @@ import status
 import time
 
 
+def GetItemID(barcode):
+    execute("select id from barcodes where barcode='{}';".format(barcode))
+    return cur.fetchone()[0]
+
+def GetItem(barcode):
+    # Get the Item ID by barcode
+    id = GetItemID(barcode)
+    # Get the Item Data
+    execute("select name, price, manufacturer, color,  details, size, tax from Items where id={};".format(id))
+    name, price, manufacturer, color,  details, size, tax = cur.fetchone()
+    #return Item(id, name, price, manufacturer, color,  details, size, tax)
+    return {"id":id,
+            "name":name,
+            "manufacturer":manufacturer,
+            "color":color,
+            "size":size,
+            "details":details,
+            "price":price,
+            "tax":tax} 
+
+
 class NetworkError(Exception):
     pass
 
@@ -35,7 +56,7 @@ def init():
     for i in range(CONNECTION_RETRIES):
         try:
             con = psycopg2.connect(
-                "dbname='inventory' user='lmr' host='localhost' password='lmrSecretDBPassword'")
+                "dbname='inventory' user='lmr' host='postgres' password='lmrSecretDBPassword'")
             cur = con.cursor()
         except (Exception,):
             monitoring.log(status.WARN, 'Can\'t establish connection to database')

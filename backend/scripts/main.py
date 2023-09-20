@@ -3,6 +3,10 @@ import status
 import monitoring
 import signals
 import db
+import sys
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+
 # import register
 
 
@@ -10,7 +14,6 @@ import db
 
 
 # TODO: finish Register
-
 
 def init():
     monitoring.log(status.INFO, 'Starting LMR-Backend...', True)
@@ -49,18 +52,23 @@ def test():
         return
 
 
-if __name__ == '__main__':
 
-    init()
 
-    # test code
-    test()
+app = Flask(__name__)
+CORS(app)
 
-    mainloop = True
-    while mainloop:
-        try:
-            time.sleep(1)
-        except signals.Interrupt:
-            cleanup()
-        except (Exception,):
-            monitoring.log(status.WARN, 'Unhandled interrupt')
+init()
+
+#TODO Handle Invalid Data
+@app.get('/item')
+def GetItem():
+    barcode = request.args.get('code')
+    print("barcode", barcode)
+    return db.GetItem(barcode)
+
+@app.route('/make_sale', methods=['POST'])
+def MakeSale():
+    content = request.json
+    #TODO Trigger the Make Sale Process
+    print(content)
+    return jsonify(content)
