@@ -93,7 +93,7 @@ class Register:
             cart += to_hex('   ')
             cart += to_hex(f"{item.count:2} Stk.  ")
             cart += to_hex(f"{item.name:17}")
-            cart += to_hex(f"{item.price * item.count:6.2f} Eur")
+            cart += to_hex(f"{item.price:6.2f} Eur")
             cart += to_hex('   ') + '0D'
 
             # increase cart value
