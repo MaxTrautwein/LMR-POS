@@ -1,5 +1,7 @@
+import locale
 from os.path import exists
 from Interfaces import Item
+import datetime
 
 
 # Exceptions
@@ -18,7 +20,15 @@ class ConfigError(Exception):
         self.msg = msg
 
 
-def to_hex(value: int | str):
+class IdError(ConfigError):
+    pass
+
+
+class NoItemsError(ConfigError):
+    pass
+
+
+def to_hex(value: int | str) -> str:
     # for integers
     if type(value) == int:
         return f"{value:02x}"
@@ -30,14 +40,18 @@ class Register:
     tty: str
 
     # init new register
-    def __init__(self, tty: str = '/dev/null'):
+    def __init__(self, tty: str = '/dev/null') -> None:
         # set local tty path
         if not exists(tty):
             raise PathError
         self._tty = tty
+        self._reset()
+
+        # set local timezone
+        locale.setlocale(locale.LC_TIME, "de_DE")
 
     # transmit hex string to register
-    def _transmit(self, data: str):
+    def _transmit(self, data: str) -> None:
         # check for successful transmit
         try:
             with open(self._tty, "wb") as file:
@@ -47,26 +61,23 @@ class Register:
             raise TransmitError
 
     # reset register to predefined values
-    def _reset(self):
+    def _reset(self) -> None:
         # reset
         self._transmit('10 05 40')
 
         # TODO: set default config
 
-    def _feed(self, n: int = 1):
-        # check for valid configuration
-        if n not in range(256):
-            raise ConfigError('Can only feed lines in range(0, 256)')
+        # set barcode hri position to below
+        self._transmit('1D 48 02')
 
-        self._transmit('1B 64 ' + to_hex(n))
+    def open(self) -> None:
+        self._transmit('1B 70 00 64 32')
 
-    def _cut(self):
-        self._transmit('1B 69')
-
-    def open(self):
-        pass
-
-    def print(self, items: list[Item]):
+    def print(self, items: list[Item], transaction_id: str = '000000000000') -> None:
+        if len(transaction_id) != 12:
+            raise IdError
+        if not items:
+            raise NoItemsError
         cart = ''
         total = 0
         # generate item string
@@ -76,7 +87,7 @@ class Register:
             cart += to_hex(f"{item.count:2} Stk.  ")
             cart += to_hex(f"{item.name:17}")
             cart += to_hex(f"{item.price * item.count:6.2f} Eur")
-            cart += to_hex('   ')
+            cart += to_hex('   ') + '0D'
 
             # increase cart value
             total += item.price * item.count
@@ -98,29 +109,63 @@ class Register:
             cart +
 
             # total price
-            to_hex('   --------------------------==========   ') +
+            to_hex(' ') + '0D' +
+            to_hex('   --------------------------==========   ') + '0D' +
 
-            to_hex('                             ') +
+            to_hex('                    Gesammt: ') +
             to_hex(f"{total:6.2f} Eur") +
-            to_hex('   ') +
+            to_hex('   ') + '0D' +
 
-            # TODO: footer
+            # tax
+            to_hex(' ') + '0D' +
+
+            to_hex('   ------------------------------------   ') + '0D' +
+
+            to_hex('   ') +
+            to_hex(f"{'Netto ':26}") +
+            to_hex(f"{total / 1.19:6.2f} Eur") +
+            to_hex('   ') + '0D' +
+
+            to_hex('   ') +
+            to_hex(f"{'MWST ':26}") +
+            to_hex(f"{total - (total / 1.19):6.2f} Eur") +
+            to_hex('   ') + '0D' +
+
+            to_hex('                             ----------   ') + '0D' +
+
+            to_hex('   ') +
+            to_hex(f"{'Brutto ':26}") +
+            to_hex(f"{total:6.2f} Eur") +
+            to_hex('   ') + '0D' +
+
+            # TODO: zu zahlen / gegeben / Rückgeld ?
 
             # footer
-            '' +
+            # start barcode
+            '1D 6B 00' +
+
+            # barcode data
+            to_hex(transaction_id) +
+
+            # end barcode
+            '00' + '0D' +
+
+            to_hex(' ') + '0D' +
+
+            # output date
+            to_hex(datetime.datetime.now().strftime("%a, %d.%m.%Y, %H:%M:%S")) +
 
             # end memory flashing
             '1D 3A' +
             # print flash
-            '1D 5E 01'
+            '1D 5E 01' +
+
+            # feed paper
+            '1B 64 00 1B 64 08' +
+
+            # cut recipe
+            '1B 69'
         )
 
-        # feed newlines to crate bottom margin
-        self._feed(0)
-        self._feed(8)
-
-        # cut recipe
-        self._cut()
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self._transmit('1B 67')
