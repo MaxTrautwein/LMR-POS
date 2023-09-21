@@ -13,15 +13,3 @@ class Item:
         self.size = size
         self.tax = tax
         self.count = count
-
-
-pencil = Item(1, 'Stift', 1.99, '', '', '', '', 1, 2)
-folder = Item(1, 'Ordner', 0.99, '', '', '', '', 1, 3)
-ruler = Item(1, 'Lineal', 2.99, '', '', '', '', 1, 1)
-rubber = Item(1, 'Radierer', 3.99, '', '', '', '', 1, 4)
-
-
-
-testitems: list[Item] = [
-    pencil, folder, ruler, rubber
-]
