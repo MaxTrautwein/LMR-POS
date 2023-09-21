@@ -5,7 +5,7 @@ import time
 
 
 def GetItemID(barcode):
-    execute("select id from barcodes where barcode='{}';".format(barcode))
+    execute("select item from barcodes where barcode='{}';".format(barcode))
     return cur.fetchone()[0]
 
 def GetItem(barcode):
