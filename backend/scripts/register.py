@@ -1,7 +1,7 @@
-import locale
 from os.path import exists
 from Interfaces import Item
 import datetime
+import time
 
 
 # Exceptions
@@ -47,9 +47,6 @@ class Register:
         self._tty = tty
         self._reset()
 
-        # set local timezone
-        locale.setlocale(locale.LC_TIME, "de_DE")
-
     # transmit hex string to register
     def _transmit(self, data: str) -> None:
         # check for successful transmit
@@ -65,10 +62,20 @@ class Register:
         # reset
         self._transmit('10 05 40')
 
+        time.sleep(10)
+
         # TODO: set default config
 
-        # set barcode hri position to below
-        self._transmit('1D 48 02')
+        self._transmit(
+            # set barcode hri position to below
+            '1D 48 02' +
+
+            # feed paper
+            '1B 64 00 1B 64 08' +
+
+            # cut recipe
+            '1B 69'
+        )
 
     def open(self) -> None:
         self._transmit('1B 70 00 64 32')
