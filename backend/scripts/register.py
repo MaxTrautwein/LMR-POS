@@ -62,7 +62,7 @@ class Register:
         # reset
         self._transmit('10 05 40')
 
-        time.sleep(10)
+        time.sleep(3)
 
         # TODO: set default config
 
