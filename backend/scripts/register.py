@@ -140,7 +140,8 @@ class Register:
 
             # TODO: zu zahlen / gegeben / Rückgeld ?
 
-            # footer
+            # centered footer
+            '1B 61 01' +
             # start barcode
             '1D 6B 00' +
 
