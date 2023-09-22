@@ -71,7 +71,7 @@ class Register:
             '1D 48 02' +
 
             # feed paper
-            '1B 64 00 1B 64 08' +
+            #'1B 64 00 1B 64 08' +
 
             # cut recipe
             '1B 69'
