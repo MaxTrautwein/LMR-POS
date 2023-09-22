@@ -61,7 +61,7 @@ CORS(app)
 init()
 
 #Init Register
-Register = register.Register()
+Register = register.Register("/dev/ttyS0")
 
 #TODO Handle Invalid Data
 @app.get('/item')
