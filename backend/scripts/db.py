@@ -43,9 +43,9 @@ def SaveTransaction(Items):
     commit()
     for item in Items:
             #Create Position
-            count = item["count"]
+            count = item.count
             execute("insert into position (product, count, total) VALUES ({},{},{}) returning id;"
-                    .format( item["id"],count, item["price"] * count))
+                    .format( item.id,count, item.price * count))
             pos.append(cur.fetchone()[0])
             commit()
     for pos_id in pos:
@@ -139,14 +139,15 @@ def fetch():
 
 def commit():
     try:
-        cur.commit()
+        con.commit()
     except (Exception,):
         monitoring.log(status.WARN, 'DB can\'t commit')
+        #TODO Fix that
         if cur.closed:
             monitoring.log(status.WARN, 'database appears to be offline')
             init()
             monitoring.log(status.INFO, 'Retry DB commit')
-            cur.commit()
+            con.commit()
         else:
             monitoring.log(status.FAIL, 'DB commit error')
             raise FetchError
