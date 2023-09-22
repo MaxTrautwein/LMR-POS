@@ -80,6 +80,7 @@ class Register:
     def open(self) -> None:
         self._transmit('1B 70 00 64 32')
 
+    #TODO Maybe add option to who made the Sale if User System is Implemented
     def print(self, items: list[Item], transaction_id: str = '000000000000') -> None:
         if len(transaction_id) != 12:
             raise IdError
@@ -106,7 +107,7 @@ class Register:
             # centered Header
             '1B 61 01' +
             to_hex('LMR HS-Esslingen') + '0D' +
-            to_hex('Flandernstrasse 106') + '0D' +
+            to_hex('Flandernstrasse 101') + '0D' +
             to_hex('73732 Esslingen') + '0D' +
             to_hex(' ') + '0D' +
             to_hex('Mo - Fr zu Pausenzeiten') + '0D' +
@@ -161,6 +162,7 @@ class Register:
             to_hex(' ') + '0D' +
 
             # output date
+            #TODO Should we Resue the Transaction Time
             to_hex(datetime.datetime.now().strftime("%a, %d.%m.%Y, %H:%M:%S")) +
 
             # end memory flashing
