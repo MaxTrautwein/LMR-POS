@@ -2,13 +2,14 @@ import psycopg2
 import monitoring
 import status
 import time
+import Interfaces
 
 
 def GetItemID(barcode):
     execute("select item from barcodes where barcode='{}';".format(barcode))
     return cur.fetchone()[0]
 
-def GetItem(barcode):
+def GetItemFrontend(barcode):
     # Get the Item ID by barcode
     id = GetItemID(barcode)
     # Get the Item Data
@@ -24,6 +25,36 @@ def GetItem(barcode):
             "price":price,
             "tax":tax} 
 
+
+#Get a Instance of one Item by it's ID
+def GetItemByID(id):
+    execute("select name, price, manufacturer, color,  details, size, tax from Items where id={};".format(id))
+    name, price, manufacturer, color,  details, size, tax = cur.fetchone()
+    return Interfaces.Item(id,name,price,manufacturer,color,details,size,tax,1)
+
+#Save a Transaction and Return the ID
+def SaveTransaction(Items):
+    pos = []
+
+    #Get Transaction ID
+    #TODO Add user System
+    execute("insert into transaction (personal, sale_date) VALUES ('{}',now()) returning id;".format("Max Musterman"))
+    trans_id = cur.fetchone()[0]
+    commit()
+    for item in Items:
+            #Create Position
+            count = item["count"]
+            execute("insert into position (product, count, total) VALUES ({},{},{}) returning id;"
+                    .format( item["id"],count, item["price"] * count))
+            pos.append(cur.fetchone()[0])
+            commit()
+    for pos_id in pos:
+        #Create Links
+        execute("insert into transaction_position (pos, trans) VALUES ({},{});".format(pos_id,trans_id))
+        commit()
+    execute("update transaction set sale_date=now() where id={};".format(trans_id))
+    commit()
+    return trans_id
 
 class NetworkError(Exception):
     pass
