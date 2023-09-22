@@ -28,7 +28,7 @@ class NoItemsError(ConfigError):
     pass
 
 
-def to_hex(value: int | str) -> str:
+def to_hex(value):
     # for integers
     if type(value) == int:
         return f"{value:02x}"
@@ -87,7 +87,7 @@ class Register:
         if not items:
             raise NoItemsError
         cart = ''
-        total = 0
+        total:float = 0
         # generate item string
         for item in items:
             # line length = 42 chars -> 3 margin, 9 cnt, 17 name, 10 price, 3 margin
@@ -98,7 +98,7 @@ class Register:
             cart += to_hex('   ') + '0D'
 
             # increase cart value
-            total += item.price * item.count
+            total += float(item.price * item.count)
 
         self._transmit(
             # start flashing to memory
