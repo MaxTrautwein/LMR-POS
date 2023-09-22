@@ -37,6 +37,9 @@ services:
     networks:
         - backend
         - frontend
+    devices:
+      - /dev/ttyS0:/dev/ttyS0
+      #- /dev/null:/dev/ttyS0
     restart: always
     depends_on:
       postgres:
