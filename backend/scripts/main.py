@@ -78,7 +78,7 @@ def MakeSale():
     for item in content:
         newItem = db.GetItemByID(item["id"])
         newItem.SetCount(item['cnt'])
-        Items.append()
+        Items.append(newItem)
 
     #Save the Transaction
     TransactionID = db.SaveTransaction(Items)
