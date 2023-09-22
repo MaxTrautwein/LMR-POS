@@ -107,7 +107,7 @@ class Register:
             # centered Header
             '1B 61 01' +
             to_hex('LMR HS-Esslingen') + '0D' +
-            to_hex('Flandernstrasse 101') + '0D' +
+            to_hex('Flandernstrasse 101-1') + '0D' +
             to_hex('73732 Esslingen') + '0D' +
             to_hex(' ') + '0D' +
             to_hex('Mo - Fr zu Pausenzeiten') + '0D' +
