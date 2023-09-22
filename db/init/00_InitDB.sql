@@ -9,7 +9,7 @@ CREATE TABLE Items
     id           serial PRIMARY KEY,
     name         text                  NOT NULL,
     cnt          integer               NOT NULL,
-    price        money                 NOT NULL,
+    price        numeric                 NOT NULL,
     manufacturer text                  NOT NULL,
     color        text,
     min_cnt      integer               NOT NULL,
@@ -39,7 +39,7 @@ CREATE TABLE Position
     id      serial PRIMARY KEY,
     product integer references Items (id) not null,
     count   integer                       not null,
-    total   money --Save Price as the Items price may change at any time
+    total   numeric --Save Price as the Items price may change at any time
 );
 
 -- Relationship between Transactions and Positions
