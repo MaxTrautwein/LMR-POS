@@ -28,7 +28,7 @@ class NoItemsError(ConfigError):
     pass
 
 
-def to_hex(value: int | str) -> str:
+def to_hex(value):
     # for integers
     if type(value) == int:
         return f"{value:02x}"
@@ -71,7 +71,7 @@ class Register:
             '1D 48 02' +
 
             # feed paper
-            '1B 64 00 1B 64 08' +
+            #'1B 64 00 1B 64 08' +
 
             # cut recipe
             '1B 69'
@@ -80,13 +80,14 @@ class Register:
     def open(self) -> None:
         self._transmit('1B 70 00 64 32')
 
+    #TODO Maybe add option to who made the Sale if User System is Implemented
     def print(self, items: list[Item], transaction_id: str = '000000000000') -> None:
         if len(transaction_id) != 12:
             raise IdError
         if not items:
             raise NoItemsError
         cart = ''
-        total = 0
+        total:float = 0
         # generate item string
         for item in items:
             # line length = 42 chars -> 3 margin, 9 cnt, 17 name, 10 price, 3 margin
@@ -97,7 +98,7 @@ class Register:
             cart += to_hex('   ') + '0D'
 
             # increase cart value
-            total += item.price * item.count
+            total += float(item.price * item.count)
 
         self._transmit(
             # start flashing to memory
@@ -106,7 +107,7 @@ class Register:
             # centered Header
             '1B 61 01' +
             to_hex('LMR HS-Esslingen') + '0D' +
-            to_hex('Flandernstrasse 106') + '0D' +
+            to_hex('Flandernstrasse 101-1') + '0D' +
             to_hex('73732 Esslingen') + '0D' +
             to_hex(' ') + '0D' +
             to_hex('Mo - Fr zu Pausenzeiten') + '0D' +
@@ -161,6 +162,7 @@ class Register:
             to_hex(' ') + '0D' +
 
             # output date
+            #TODO Should we Resue the Transaction Time
             to_hex(datetime.datetime.now().strftime("%a, %d.%m.%Y, %H:%M:%S")) +
 
             # end memory flashing

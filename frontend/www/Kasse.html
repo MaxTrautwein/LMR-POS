@@ -11,7 +11,7 @@
     <script src="libs/jquery-3.7.1.min.js"></script>
     <link href="./Kasse.css" rel="stylesheet">
 </head>
-<body>
+<body style="overflow: hidden;">
 
 <template id="itemRowTemplate">
     <div class="row border item-row">
@@ -28,15 +28,15 @@
         <div class="col border border-2 border-black">
             <div id="Warenkorb">
                 <div class="row">
-                    <div class="col">Menge</div>
-                    <div class="col">Artikel</div>
-                    <div class="col">Einzelpreis</div>
-                    <div class="col">gesamptpreis</div>
+                    <div class="col"><strong>Menge</strong></div>
+                    <div class="col"><strong>Artikel</strong></div>
+                    <div class="col"><strong>Einzelpreis</strong></div>
+                    <div class="col"><strong>Gesamtpreis</strong></div>
                 </div>
             </div>
 
             <div class="row mt-auto TotalSum">
-                <div class="col">Gesamtpreis</div>
+                <div class="col"><strong>Gesamtpreis</strong></div>
                 <div id="TotalPrice" class="col">TBD</div>
             </div>
         </div>
@@ -163,7 +163,7 @@
         //TODO Add other site for Rückgeld & Co
         //TODO maybe check for success
 
-        // EmptyBasket();
+        EmptyBasket();
     }
 
     function Logout() {

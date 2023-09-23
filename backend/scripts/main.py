@@ -3,7 +3,8 @@ import status
 import monitoring
 import signals
 import db
-import sys
+import Interfaces
+import register
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
@@ -59,16 +60,36 @@ CORS(app)
 
 init()
 
+#Init Register
+Register = register.Register("/dev/ttyS0")
+
 #TODO Handle Invalid Data
 @app.get('/item')
 def GetItem():
     barcode = request.args.get('code')
     print("barcode", barcode)
-    return db.GetItem(barcode)
+    return db.GetItemFrontend(barcode)
 
 @app.route('/make_sale', methods=['POST'])
 def MakeSale():
     content = request.json
-    #TODO Trigger the Make Sale Process
-    print(content)
+    Items = []
+    #Convert Basket from Frontend into compatible format for Printing
+    for item in content:
+        newItem = db.GetItemByID(item["id"])
+        newItem.SetCount(item['cnt'])
+        Items.append(newItem)
+
+    #Save the Transaction
+    TransactionID = db.SaveTransaction(Items)
+
+    #Print the Bon
+    Register.print(Items,f"{TransactionID:012}")
+
+    #Open the Register
+    Register.open()
+    
+    #Should we Update The Remaining Product Count now? Or do that seperatly using the Saved Transaction Data
+    
+    #What if any should we return !?
     return jsonify(content)
