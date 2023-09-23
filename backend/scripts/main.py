@@ -1,15 +1,20 @@
-import time
-import status
-import monitoring
+import logging
 import signals
 import db
-import Interfaces
 import register
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-# import register
+logger = logging.getLogger('LMR_Log')
+logger.setLevel(logging.DEBUG)
 
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+ch.setFormatter(formatter)
+logger.addHandler(ch)
 
 # TODO: improve error handling
 
@@ -17,7 +22,7 @@ from flask_cors import CORS
 # TODO: finish Register
 
 def init():
-    monitoring.log(status.INFO, 'Starting LMR-Backend...', True)
+    logger.info('Starting LMR-Backend...')
 
     try:
         signals.start_signal_handler()
@@ -29,17 +34,20 @@ def init():
     except (Exception,):
         pass
 
-    monitoring.log(status.OK, 'Started LMR-Backend', True)
+    logger.info('Started LMR-Backend')
 
 
 def cleanup(exitcode=0):
-    monitoring.log(status.INFO, 'Starting cleanup...', True)
+    logger.info('Starting cleanup...')
 
     db.drop_connection()
 
-    monitoring.log(status.OK, 'Finished cleanup', True)
+    logger.info('Finished cleanup')
 
-    monitoring.log((status.OK if exitcode == 0 else status.FAIL), 'Exiting with code ' + str(exitcode), True)
+    if(exitcode == 0):
+        logger.info('Exiting with code ' + str(exitcode))
+    else:
+        logger.error('Exiting with code ' + str(exitcode))
     exit(exitcode)
 
 
@@ -67,7 +75,6 @@ Register = register.Register("/dev/ttyS0")
 @app.get('/item')
 def GetItem():
     barcode = request.args.get('code')
-    print("barcode", barcode)
     return db.GetItemFrontend(barcode)
 
 @app.route('/make_sale', methods=['POST'])
