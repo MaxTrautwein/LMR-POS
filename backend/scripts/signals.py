@@ -1,8 +1,8 @@
-import monitoring
-import status
+import logging
 import colors
 import signal
 
+logger = logging.getLogger('LMR_Log')
 
 class Interrupt(Exception):
     pass
@@ -14,25 +14,25 @@ class SignalError(Exception):
 
 # Signal Handler to prevent docker from killing python
 def signal_handler(_, __):
-    monitoring.log(status.INFO, colors.HEADER + 'Received interrupt')
+    logger.info(colors.HEADER + 'Received interrupt')
     raise Interrupt
 
 
 # catch SIGINT and SIGTERM signals
 def start_signal_handler():
-    monitoring.log(status.INFO, 'Starting signal handlers...')
+    logger.info('Starting signal handlers...')
     try:
         signal.signal(signal.SIGTERM, signal_handler)
     except (Exception,):
-        monitoring.log(status.OK, 'Failed to start SIGTERM handler')
+        logger.error('Failed to start SIGTERM handler')
         raise SignalError
     else:
-        monitoring.log(status.OK, 'Started SIGTERM handler')
+        logger.info('Started SIGTERM handler')
 
     try:
         signal.signal(signal.SIGINT, signal_handler)
     except (Exception,):
-        monitoring.log(status.OK, 'Failed to start SIGINT handler')
+        logger.error('Failed to start SIGINT handler')
         raise SignalError
     else:
-        monitoring.log(status.OK, 'Started SIGINT handler')
+        logger.info('Started SIGINT handler')

@@ -1,8 +1,9 @@
 import psycopg2
-import monitoring
-import status
+import logging
 import time
 import Interfaces
+
+logger = logging.getLogger('LMR_Log')
 
 
 def GetItemID(barcode):
@@ -82,7 +83,7 @@ cur = ...
 
 def init():
     global con, cur
-    monitoring.log(status.INFO, 'Attempting to connect to database...')
+    logger.info('Attempting to connect to database...')
     # setup database connection
     for i in range(CONNECTION_RETRIES):
         try:
@@ -90,15 +91,15 @@ def init():
                 "dbname='inventory' user='lmr' host='postgres' password='lmrSecretDBPassword'")
             cur = con.cursor()
         except (Exception,):
-            monitoring.log(status.WARN, 'Can\'t establish connection to database')
+            logger.error('Can\'t establish connection to database')
         else:
-            monitoring.log(status.OK, 'Connected to database')
+            logger.info('Connected to database')
             return
 
         time.sleep(RETRY_TIMEOUT)
-        monitoring.log(status.INFO, 'Reattempting to connect to database')
+        logger.info('Reattempting to connect to database')
 
-    monitoring.log(status.FAIL, 'Connection to database failed')
+    logger.critical('Connection to database failed')
     raise NetworkError
 
 
@@ -106,34 +107,34 @@ def execute(cmd: str):
     try:
         cur.execute(cmd)
     except (Exception,):
-        monitoring.log(status.WARN, 'DB can\'t exec: ' + cmd)
+        logger.error('DB can\'t exec: ' + cmd)
         if cur.closed:
-            monitoring.log(status.WARN, 'database appears to be offline')
+            logger.warning('database appears to be offline')
             init()
-            monitoring.log(status.INFO, 'Retry DB exec: ' + cmd)
+            logger.debug('Retry DB exec: ' + cmd)
             execute(cmd)
         else:
-            monitoring.log(status.FAIL, 'DB exec error')
+            logger.critical('DB exec error')
             raise ExecError
     else:
-        monitoring.log(status.INFO, 'DB exec: ' + cmd)
+        logger.debug('DB exec: ' + cmd)
 
 
 def fetch():
     try:
         response = cur.fetchall()
     except (Exception,):
-        monitoring.log(status.WARN, 'DB can\'t fetch')
+        logger.error('DB can\'t fetch')
         if cur.closed:
-            monitoring.log(status.WARN, 'database appears to be offline')
+            logger.warning('database appears to be offline')
             init()
-            monitoring.log(status.INFO, 'Retry DB fetch')
+            logger.info('Retry DB fetch')
             response = fetch()
         else:
-            monitoring.log(status.FAIL, 'DB fetch error')
+            logger.critical('DB fetch error')
             raise FetchError
     else:
-        monitoring.log(status.INFO, 'DB fetch')
+        logger.debug('DB fetch')
     return response
 
 
@@ -141,28 +142,28 @@ def commit():
     try:
         con.commit()
     except (Exception,):
-        monitoring.log(status.WARN, 'DB can\'t commit')
+        logger.error('DB can\'t commit')
         #TODO Fix that
         if cur.closed:
-            monitoring.log(status.WARN, 'database appears to be offline')
+            logger.warning('database appears to be offline')
             init()
-            monitoring.log(status.INFO, 'Retry DB commit')
+            logger.info('Retry DB commit')
             con.commit()
         else:
-            monitoring.log(status.FAIL, 'DB commit error')
+            logger.critical('DB commit error')
             raise FetchError
     else:
-        monitoring.log(status.INFO, 'DB commit')
+        logger.debug('DB commit')
 
 
 def drop_connection():
     if con:
-        monitoring.log(status.INFO, 'Closing database connection...')
+        logger.info('Closing database connection...')
         con.close()
         if con.closed:
-            monitoring.log(status.OK, 'Closed database connection')
+            logger.info('Closed database connection')
         else:
-            monitoring.log(status.FAIL, 'Can\'t close database connection')
-            monitoring.log(status.WARN, 'Leaving database connection open')
+            logger.error('Can\'t close database connection')
+            logger.warning('Leaving database connection open')
     else:
-        monitoring.log(status.WARN, 'Skipping: Close database connection')
+        logger.warning('Skipping: Close database connection')
