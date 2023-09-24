@@ -100,3 +100,10 @@ def MakeSale():
     
     #What if any should we return !?
     return jsonify(content)
+
+@app.route('/AddNewItem', methods=['POST'])
+def AddNewItem():
+    content = request.json
+    db.AddNewItem(content)
+    #What if any should we return !?
+    return jsonify(content)
