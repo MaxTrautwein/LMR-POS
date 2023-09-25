@@ -81,8 +81,8 @@ class Register:
         self._transmit('1B 70 00 64 32')
 
     #TODO Maybe add option to who made the Sale if User System is Implemented
-    def print(self, items: list[Item], transaction_id: str = '000000000000') -> None:
-        if len(transaction_id) != 12:
+    def print(self, items: list[Item], transaction_id: str = '00000000000') -> None:
+        if len(transaction_id) != 11:
             raise IdError
         if not items:
             raise NoItemsError
@@ -157,7 +157,7 @@ class Register:
             to_hex(transaction_id) +
 
             # end barcode
-            '00' + '0D' +
+            '00 00' + '0D' +
 
             to_hex(' ') + '0D' +
 

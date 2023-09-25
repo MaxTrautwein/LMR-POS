@@ -91,7 +91,7 @@ def MakeSale():
     TransactionID = db.SaveTransaction(Items)
 
     #Print the Bon
-    Register.print(Items,f"{TransactionID:012}")
+    Register.print(Items,f"{TransactionID:011}")
 
     #Open the Register
     Register.open()
