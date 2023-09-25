@@ -148,18 +148,18 @@
     }
 
     function Handleinput(data) {
-        if (data.startsWith('LMR-POS')) {
+        if (data.startsWith('LMRßPOS')) {
             switch (data) {
-                case "LMR-POS-cancel":
+                case "LMRßPOSßcancel":
                     RemoveLastItem();
                     break;
-                case "LMR-POS-Clear":
+                case "LMRßPOSßClear":
                     EmptyBasket();
                     break;
-                case "LMR-POS-Sale":
+                case "LMRßPOSßSale":
                     MakeSale();
                     break;
-                case "LMR-POS-Logout":
+                case "LMRßPOSßLogout":
                     Logout();
                     break;
                 default:
