@@ -29,9 +29,12 @@ def GetItemFrontend(barcode):
 
 #Get a Instance of one Item by it's ID
 def GetItemByID(id):
-    execute("select name, price, manufacturer, color,  details, size, tax from Items where id={};".format(id))
-    name, price, manufacturer, color,  details, size, tax = cur.fetchone()
-    return Interfaces.Item(id,name,price,manufacturer,color,details,size,tax,1)
+    execute("select name, price, manufacturer, color,  details, size, tax , bon_name from Items where id={};".format(id))
+    name, price, manufacturer, color,  details, size, tax, bon_name = cur.fetchone()
+    #Use Normal Name if bon_name is not Set
+    if bon_name == '':
+        bon_name = name
+    return Interfaces.Item(id,bon_name,price,manufacturer,color,details,size,tax,1)
 
 #Save a Transaction and Return the ID
 def SaveTransaction(Items):
@@ -56,6 +59,34 @@ def SaveTransaction(Items):
     execute("update transaction set sale_date=now() where id={};".format(trans_id))
     commit()
     return trans_id
+
+def AddNewItem(Data):
+    name = Data["name"]
+    cnt = Data["cnt"]
+    price = Data["price"]
+    manufacturer = Data["manufacturer"]
+    color = Data["color"]
+    min_cnt = Data["min_cnt"]
+    details = Data["details"]
+    size = Data["size"]
+    bon_name = Data["bon_name"]
+    Barcodes = Data["Barcodes"]
+    #Create the item
+    execute("insert into Items(name, cnt, price, manufacturer, color, min_cnt, details, size, bon_name) " +
+            "values ('{}',{},{},'{}','{}',{},'{}','{}','{}') returning id;"
+            .format(name, cnt, price, manufacturer, color, min_cnt, details, size, bon_name))
+    id = cur.fetchone()[0]
+    commit()
+
+    #Link the Barcodes
+    for Barcode in Barcodes:
+        execute("insert into barcodes (barcode, item) values ('{}',{})"
+                .format(Barcode,id))
+        commit()
+    #Create the Internal Barcode:
+    execute("insert into barcodes (barcode, item) values ('{}',{})"
+            .format(f"LMR-{(id-1):04}" ,id))
+    commit()
 
 class NetworkError(Exception):
     pass

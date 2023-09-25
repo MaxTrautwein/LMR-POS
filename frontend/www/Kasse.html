@@ -9,6 +9,7 @@
             integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
             crossorigin="anonymous"></script>
     <script src="libs/jquery-3.7.1.min.js"></script>
+    <script src="SendData.js"></script>
     <link href="./Kasse.css" rel="stylesheet">
 </head>
 <body style="overflow: hidden;">
@@ -62,20 +63,9 @@
 <input id="hiddenInput" onblur="this.focus()" autofocus style="border-color: transparent; color: transparent;"/>
 
 <script>
-    const ServerAddress = "http://127.0.0.1:5000"
     var Basket_reference = $("#Warenkorb");
 
     var Warenkorb = [];
-
-    function httpGetAsync(theUrl, callback) {
-        var xmlHttp = new XMLHttpRequest();
-        xmlHttp.onreadystatechange = function () {
-            if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
-                callback(xmlHttp.responseText);
-        }
-        xmlHttp.open("GET", theUrl, true); // true for asynchronous
-        xmlHttp.send(null);
-    }
 
     //TODO Handle Invalid Data
     function AddItem(barcode) {
@@ -145,20 +135,7 @@
     //Signal to the Backend that a Sale should be Made
     function MakeSale() {
         //TODO Reduce the Information given to ID & cnt
-
-        var data = JSON.stringify(Warenkorb);
-
-        fetch(ServerAddress + "/make_sale", {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            body: data
-        })
-            .then(response => response.json())
-            .then(response => console.log(JSON.stringify(response)));
-
+        PostJson(Warenkorb,ServerAddress + "/make_sale")
 
         //TODO Add other site for Rückgeld & Co
         //TODO maybe check for success
@@ -171,18 +148,18 @@
     }
 
     function Handleinput(data) {
-        if (data.startsWith('LMR-POS')) {
+        if (data.startsWith('LMRßPOS')) {
             switch (data) {
-                case "LMR-POS-cancel":
+                case "LMRßPOSßcancel":
                     RemoveLastItem();
                     break;
-                case "LMR-POS-Clear":
+                case "LMRßPOSßClear":
                     EmptyBasket();
                     break;
-                case "LMR-POS-Sale":
+                case "LMRßPOSßSale":
                     MakeSale();
                     break;
-                case "LMR-POS-Logout":
+                case "LMRßPOSßLogout":
                     Logout();
                     break;
                 default:

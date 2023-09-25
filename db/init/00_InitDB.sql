@@ -15,7 +15,8 @@ CREATE TABLE Items
     min_cnt      integer               NOT NULL,
     details      text,
     size         text,
-    tax          float4 DEFAULT '0.19' NOT NULL
+    tax          float4 DEFAULT '0.19' NOT NULL,
+    bon_name    text
 );
 
 CREATE TABLE Barcodes
