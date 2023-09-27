@@ -167,7 +167,8 @@
             }
 
         } else {
-            AddItem(data)
+            data = data.replace("ß","-");
+            AddItem(data);
         }
 
     }
