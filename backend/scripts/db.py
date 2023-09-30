@@ -14,27 +14,15 @@ def GetItemFrontend(barcode):
     # Get the Item ID by barcode
     id = GetItemID(barcode)
     # Get the Item Data
-    execute("select name, price, manufacturer, color,  details, size, tax from Items where id={};".format(id))
-    name, price, manufacturer, color,  details, size, tax = cur.fetchone()
-    #return Item(id, name, price, manufacturer, color,  details, size, tax)
-    return {"id":id,
-            "name":name,
-            "manufacturer":manufacturer,
-            "color":color,
-            "size":size,
-            "details":details,
-            "price":price,
-            "tax":tax} 
+    ret = GetItemByID(id).toJSON()
+    return ret
 
 
 #Get a Instance of one Item by it's ID
 def GetItemByID(id):
-    execute("select name, price, manufacturer, color,  details, size, tax , bon_name from Items where id={};".format(id))
-    name, price, manufacturer, color,  details, size, tax, bon_name = cur.fetchone()
-    #Use Normal Name if bon_name is not Set
-    if bon_name == '':
-        bon_name = name
-    return Interfaces.Item(id,bon_name,price,manufacturer,color,details,size,tax,1)
+    execute("select name, price, manufacturer, color,  details, size, tax , bon_name, cnt, min_cnt from Items where id={};".format(id))
+    name, price, manufacturer, color,  details, size, tax, bon_name, cnt,min_cnt  = cur.fetchone()
+    return Interfaces.Item(id,name,price,manufacturer,color,details,size,tax,1,bon_name,cnt,min_cnt)
 
 #Save a Transaction and Return the ID
 def SaveTransaction(Items):
@@ -87,6 +75,23 @@ def AddNewItem(Data):
     execute("insert into barcodes (barcode, item) values ('{}',{})"
             .format(f"LMR-{(id-1):04}" ,id))
     commit()
+
+def GetItemsWithIssues():
+    IDs = []
+    execute("select id from items where price = 999;")
+    data = cur.fetchall()
+    for item in data:
+        IDs.append(item[0])
+    execute("select  id from items where cnt < items.min_cnt;")
+    data = cur.fetchall()
+    for item in data:
+        IDs.append(item[0])
+    return IDs
+
+def UpdateItem(ItemData: Interfaces.Item):
+    execute("update items set (name, cnt, price, manufacturer, color, min_cnt, details, size, bon_name) = "+
+            "('{}',{},{},'{}','{}',{},'{}','{}','{}') where id = {}"
+            .format(ItemData.name,ItemData.cnt,ItemData.price,ItemData.manufacturer,ItemData.color,ItemData.min_cnt,ItemData.details,ItemData.size,ItemData.bon_name,ItemData.id))
 
 class NetworkError(Exception):
     pass

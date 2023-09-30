@@ -93,7 +93,7 @@ class Register:
             # line length = 42 chars -> 3 margin, 9 cnt, 17 name, 10 price, 3 margin
             cart += to_hex('   ')
             cart += to_hex(f"{item.count:2}x  ")
-            cart += to_hex(f"{item.name:21.21}")
+            cart += to_hex(f"{item.GetBonName():21.21}")
             cart += to_hex(f"{item.price:6.2f} Eur")
             cart += to_hex('   ') + '0D'
 

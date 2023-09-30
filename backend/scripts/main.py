@@ -4,6 +4,7 @@ import db
 import register
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import Interfaces
 
 logger = logging.getLogger('LMR_Log')
 logger.setLevel(logging.DEBUG)
@@ -77,6 +78,11 @@ def GetItem():
     barcode = request.args.get('code')
     return db.GetItemFrontend(barcode)
 
+@app.get('/itemById')
+def GetItemById():
+    id = request.args.get('id')
+    return db.GetItemByID(id).toJSON() 
+
 @app.route('/make_sale', methods=['POST'])
 def MakeSale():
     content = request.json
@@ -84,7 +90,7 @@ def MakeSale():
     #Convert Basket from Frontend into compatible format for Printing
     for item in content:
         newItem = db.GetItemByID(item["id"])
-        newItem.SetCount(item['cnt'])
+        newItem.count = item['cnt']
         Items.append(newItem)
 
     #Save the Transaction
@@ -107,3 +113,23 @@ def AddNewItem():
     db.AddNewItem(content)
     #What if any should we return !?
     return jsonify(content)
+
+@app.get('/Issues')
+def GetItemsWithIssues():
+    # TODO Get Items with no Price / price = 999
+    # TODO Get Items with no Barcode
+    db.GetItemsWithIssues()
+    #logger.error("TODO")
+
+
+def GetReorderItems():
+    # TODO Get items where the Remaining Amount is Smaller then the minimum
+    logger.error("TODO")
+
+@app.route('/UpdateItem', methods=['POST'])
+def UpdateItem():
+    # Update information regarding some Item
+    content = request.json
+
+    db.UpdateItem( Interfaces.Item(content))
+    logger.error("TODO")
