@@ -2,7 +2,7 @@ import logging
 import signals
 import db
 import register
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 
 logger = logging.getLogger('LMR_Log')
@@ -106,4 +106,79 @@ def AddNewItem():
     content = request.json
     db.AddNewItem(content)
     #What if any should we return !?
+    return jsonify(content)
+
+@app.get('/ExportSheet')
+def GetExportSheet():
+    id = request.args.get('id')
+    return db.GenerateTransactionExportSheet(id)
+
+
+#There has to be a better way to do that
+PageSetup = []
+@app.get('/ExportPDF')
+def GetPDF_Printout():
+    logger.info(PageSetup)
+    return render_template("TransactionPDF.html",data=PageSetup)
+
+@app.route('/GeneratePDF', methods=['POST'])
+def GeneratePDF_Printout():
+    # Min Hight 1/4 1-2 Items
+    # Max Hight 1 --> 39 Items
+    # If more then Max Print as Error Call for Manual Action
+    # In terms of Space 
+    #  H1 === 3 Items
+    #  Accounting == 7 Items
+    #  <hr> == 3 Items
+    #  Min Hight 15 "Units"
+    #   1 Page Max 4 * 15 = 60 "Units"
+    #
+    content = request.json
+    logger.debug(content)
+    PageSpace = 60
+    #Array of
+    # {
+    # "TransactionID":20
+    # "SaleID":1(
+    # })
+
+    TranactionData = []
+    for Sale in content:
+        TranactionData.append( db.GetTransactionData(Sale["SaleID"]))
+        #Append Transaction Number
+        TranactionData[-1]["TransactionID"] = Sale["TransactionID"]
+        TranactionData[-1]["Total"] = Sale["Total"]
+    # Build up the Page Composition
+    PageSetup.clear()
+    PageSetup.append({
+                    "free":PageSpace,
+                    "Items":[]
+                })
+    logger.info(PageSetup)
+    for transaction in TranactionData:
+        # Calculate the requierd Space
+        items = len(transaction["items"])
+        if (items <= 2):
+            size = 15
+        else:
+            size = 15 + items - 2
+            
+        #Check if it still fits
+        if (size > PageSetup[-1]["free"]):
+            #Wee need a new Page
+            PageSetup.append({
+                "free":PageSpace,
+                "Items":[]
+            })
+        #Now We have space by definition
+        #Insert the Transaction into the Page
+        #Substract Reqierd Space
+        PageSetup[-1]["free"] -= size
+        #Add the Content
+        # Sanity Check Not over the Max
+        if (size > 60):
+            logger.error("Transaction ID: " + str(transaction["id"]) + " Is over the Size Limitation.... Size: " + str(size))
+            #Maybe Add a Error Info To the Page
+            transaction["date"] = "ERROR"
+        PageSetup[-1]["Items"].append(transaction)
     return jsonify(content)
