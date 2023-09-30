@@ -1,0 +1,12 @@
+
+body{
+    background: black;
+}
+
+.page{
+    background: white;
+    width: 21cm;
+    height: 29.7cm;
+    margin-bottom: 100px;
+    /* margin: 30mm 45mm 30mm 45mm;*/
+}

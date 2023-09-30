@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Export - Google Sheet</title>
+    <link href="libs/5.3.2_dist_css_bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <script src="libs/5.3.2_dist_js_bootstrap.bundle.min.js"
+            integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+            crossorigin="anonymous"></script>
+    <script src="libs/jquery-3.7.1.min.js"></script>
+    <script src="SendData.js"></script>
+</head>
+<body>
+<div class="input-group mb-3 col">
+    <span class="input-group-text">Sale ID</span>
+    <input type="number" id="SaleID" class="form-control" placeholder="Last Sale ID In the Google Sheet" aria-label="label" aria-describedby="desc">
+</div>
+<div class="input-group mb-3 col">
+    <span class="input-group-text">Transaction ID</span>
+    <input type="number" id="TransactionID" class="form-control" placeholder="Last Transaction Number in the Google Sheet" aria-label="label" aria-describedby="desc">
+</div>
+<button class="btn btn-primary" onclick="RequestExport()">Request Export</button>
+
+
+<div class="input-group mb-3">
+    <span class="input-group-text">Output</span>
+    <textarea style="height: 70vh;" id="Output" class="form-control" aria-label="With textarea"></textarea>
+</div>
+<button class="btn btn-primary" onclick="UpdatePDF()">Update PDF</button>
+
+
+<script>
+
+    let SaleID = $('#SaleID');
+    let TransactionID = $('#TransactionID');
+    let Output = $('#Output');
+
+    let PDF_RequestJson = []
+    function RequestExport(){
+        Output.val('');
+        httpGetAsync(ServerAddress + "/ExportSheet" + "?id=" + SaleID.val(), FormatExport);
+    }
+
+    function UpdatePDF(){
+        PostJson( PDF_RequestJson, ServerAddress + "/GeneratePDF");
+    }
+    function FormatExport(data){
+        PDF_RequestJson = []
+        data = JSON.parse(data);
+        TransactionID.val(Number(TransactionID.val()) + 1);
+        for (let i = 0 ; i < data.length;i++){
+            let SaleEntry = data[i];
+            let line = `\t${TransactionID.val()}\t${SaleEntry["SaleDay"]}\t${SaleEntry["SaleMonth"]}\t${SaleEntry["EntryDay"]}\t${SaleEntry["EntryMonth"]}\t${SaleEntry["Desc"]}\t\t${SaleEntry["Amount"].replace(".",",")}`
+            if (i === 0){
+                Output.val(line)
+            }else {
+                Output.val(Output.val() + "\n" + line)
+            }
+            PDF_RequestJson.push({
+                "TransactionID":TransactionID.val(),
+                "SaleID":SaleEntry["SaleID"],
+                "Total":SaleEntry["Amount"]
+            })
+
+
+            if(i < data.length -1){
+                TransactionID.val(Number(TransactionID.val()) + 1);
+            }
+
+        }
+
+        //Copy The Data
+        navigator.clipboard.writeText(Output.val());
+
+    }
+
+</script>
+</body>
+</html>

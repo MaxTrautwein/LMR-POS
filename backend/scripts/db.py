@@ -29,11 +29,9 @@ def GetItemFrontend(barcode):
 
 #Get a Instance of one Item by it's ID
 def GetItemByID(id):
-    execute("select name, price, manufacturer, color,  details, size, tax , bon_name from Items where id={};".format(id))
+    execute("select name, price, manufacturer, color,  details, size, tax , coalesce(nullif(bon_name,''),name) from Items where id={};".format(id))
     name, price, manufacturer, color,  details, size, tax, bon_name = cur.fetchone()
-    #Use Normal Name if bon_name is not Set
-    if bon_name == '':
-        bon_name = name
+    # TODO maybe Append Interfaces.Item with name as the name & bon_name Logic is now handeled as SQL
     return Interfaces.Item(id,bon_name,price,manufacturer,color,details,size,tax,1)
 
 #Save a Transaction and Return the ID
@@ -87,6 +85,54 @@ def AddNewItem(Data):
     execute("insert into barcodes (barcode, item) values ('{}',{})"
             .format(f"LMR-{(id-1):04}" ,id))
     commit()
+
+def GenerateTransactionExportSheet(id):
+    logger.info("Generate Export far Salse after " + str(id))
+    execute("SELECT extract(day  from transaction.sale_date) as \"Sale Day\"," +
+       "extract(month  from transaction.sale_date) as \"Sale Month\"," +
+       "extract(day  from now()) as \"Book Day\"," +
+       "extract(month  from now()) as \"Book Month\"," +
+       "concat('LMR Verkauf ID: ', transaction.id)," +
+       "sum(position.total)," +
+       "transaction.id " +
+       "from transaction_position , position, transaction" +
+        " where transaction_position.trans = transaction.id and transaction_position.pos = position.id" +
+        " and transaction.id > {}".format(id) +
+        " group by transaction.sale_date, transaction.id order by transaction.sale_date;")
+    data = cur.fetchall()
+    ReturnData = []
+    for sale in data:
+        ReturnData.append({
+            "SaleID": sale[6],
+            "SaleDay":sale[0],
+            "SaleMonth":sale[1],
+            "EntryDay":sale[2],
+            "EntryMonth":sale[3],
+            "Desc":sale[4],
+            "Amount":sale[5]
+        })
+    return ReturnData
+
+def GetTransactionData(id):
+    execute("SELECT transaction.sale_date,position.count, coalesce(nullif(items.bon_name,''),items.name) ,position.total from position,transaction_position,items, transaction "+
+    "where position.id =  transaction_position.pos and transaction.id = transaction_position.trans and items.id = position.product " +
+    "and transaction_position.trans = {}".format(id))
+    data = cur.fetchall()
+    ReturnData = {
+        "date":data[0][0],
+        "id":id,
+        "items":[]
+    }
+    logger.debug("Response form SQL:")
+    logger.debug(data)
+    for sale in data:
+        ReturnData["items"].append({
+            "name":sale[2],
+            "cnt":sale[1],
+            "price_per":sale[3] / sale[1]
+        })
+
+    return ReturnData
 
 class NetworkError(Exception):
     pass
