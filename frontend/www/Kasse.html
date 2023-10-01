@@ -111,13 +111,13 @@
             var $row = $(clone);
             $row.find("[data-template='cnt']").text(item["cnt"]);
             $row.find("[data-template='name']").text(item["name"]);
-            $row.find("[data-template='price']").text(item["price"]);
-            $row.find("[data-template='total']").text(total);
+            $row.find("[data-template='price']").text(parseFloat(item["price"]).toFixed(2));
+            $row.find("[data-template='total']").text(total.toFixed(2));
 
             Basket_reference.append($row)
         }
 
-        $('#TotalPrice').text(TotalPrice);
+        $('#TotalPrice').text(TotalPrice.toFixed(2));
 
     }
 
