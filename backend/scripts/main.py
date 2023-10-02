@@ -81,19 +81,25 @@ def GetItem():
 @app.route('/make_sale', methods=['POST'])
 def MakeSale():
     content = request.json
-    Items = []
+
+    SeperateBons = {}
+    
     #Convert Basket from Frontend into compatible format for Printing
     for item in content:
         newItem = db.GetItemByID(item["id"])
         newItem.SetCount(item['cnt'])
-        Items.append(newItem)
 
-    #Save the Transaction
-    TransactionID, date = db.SaveTransaction(Items)
-
-    #Print the Bon
-    #datetime.strptime(date,'%Y-%m-%d %H:%M:%S.%f')
-    Register.print(Items,date,f"{TransactionID:011}")
+        tax = newItem.tax
+        if not tax in SeperateBons:
+            SeperateBons[tax] = []
+        SeperateBons[tax].append(newItem)
+    logger.debug(SeperateBons)
+    for _, taxBracked in SeperateBons.items():
+        #Save the Transaction
+        TransactionID, date = db.SaveTransaction(taxBracked)
+        logger.debug(f"printing on for {taxBracked}")
+        #Print the Bon
+        Register.print(taxBracked,date,f"{TransactionID:011}")
 
     #Open the Register
     Register.open()
