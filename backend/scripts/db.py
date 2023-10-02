@@ -40,8 +40,8 @@ def SaveTransaction(Items):
 
     #Get Transaction ID
     #TODO Add user System
-    execute("insert into transaction (personal, sale_date) VALUES ('{}',now()) returning id;".format("Max Musterman"))
-    trans_id = cur.fetchone()[0]
+    execute("insert into transaction (personal, sale_date) VALUES ('{}',now()) returning id, sale_date;".format("Max Musterman"))
+    trans_id, sale_date = cur.fetchone()
     commit()
     for item in Items:
             #Create Position
@@ -56,7 +56,7 @@ def SaveTransaction(Items):
         commit()
     execute("update transaction set sale_date=now() where id={};".format(trans_id))
     commit()
-    return trans_id
+    return trans_id, sale_date
 
 def AddNewItem(Data):
     name = Data["name"]

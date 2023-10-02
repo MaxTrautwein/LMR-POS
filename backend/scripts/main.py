@@ -4,6 +4,7 @@ import db
 import register
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
+from datetime import datetime
 
 logger = logging.getLogger('LMR_Log')
 logger.setLevel(logging.DEBUG)
@@ -88,10 +89,11 @@ def MakeSale():
         Items.append(newItem)
 
     #Save the Transaction
-    TransactionID = db.SaveTransaction(Items)
+    TransactionID, date = db.SaveTransaction(Items)
 
     #Print the Bon
-    Register.print(Items,f"{TransactionID:011}")
+    #datetime.strptime(date,'%Y-%m-%d %H:%M:%S.%f')
+    Register.print(Items,date,f"{TransactionID:011}")
 
     #Open the Register
     Register.open()
