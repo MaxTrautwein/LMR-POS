@@ -114,7 +114,7 @@ def GenerateTransactionExportSheet(id):
     return ReturnData
 
 def GetTransactionData(id):
-    execute("SELECT transaction.sale_date,position.count, coalesce(nullif(items.bon_name,''),items.name) ,position.total from position,transaction_position,items, transaction "+
+    execute("SELECT transaction.sale_date,position.count, coalesce(nullif(items.bon_name,''),items.name) ,position.total, items.tax from position,transaction_position,items, transaction "+
     "where position.id =  transaction_position.pos and transaction.id = transaction_position.trans and items.id = position.product " +
     "and transaction_position.trans = {}".format(id))
     data = cur.fetchall()
@@ -129,7 +129,8 @@ def GetTransactionData(id):
         ReturnData["items"].append({
             "name":sale[2],
             "cnt":sale[1],
-            "price_per":sale[3] / sale[1]
+            "price_per":sale[3] / sale[1],
+            "tax":sale[4]
         })
 
     return ReturnData

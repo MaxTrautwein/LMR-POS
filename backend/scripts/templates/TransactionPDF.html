@@ -33,14 +33,15 @@
                 {{ Transaction["date"] }}
             </div>
             <div class="col">
+                <!-- For diffrent tax Level we print diffrent Bons as that allows use to ealsily book correctly-->
                 {% for item in Transaction["items"] %}
                     {{ item["cnt"] }}x {{ item["name"] }} {{ "%.2f€"|format(item["price_per"]|float) }}<br>
                 {% endfor %}
                 --------------<br>
                 Gesamt: {{ "%.2f€"|format(Transaction["Total"]|float) }} <br>
                 <br>
-                Netto: {{ "%.2f€"|format(Transaction["Total"]|float / 1.19) }} <br>
-                MWST: {{ "%.2f€"|format(Transaction["Total"]|float - (Transaction["Total"]|float / 1.19)) }} <br>
+                Netto: {{ "%.2f€"|format(Transaction["Total"]|float /  (1.0 + Transaction["items"][0]["tax"]|float)) }} <br>
+                MWST ({{ "%2.0f"|format(Transaction["items"][0]["tax"]|float * 100 )}}%): {{ "%.2f€"|format(Transaction["Total"]|float - (Transaction["Total"]|float / (1.0 + Transaction["items"][0]["tax"]|float))) }} <br>
                 -----------<br>
                 Brutto: {{ "%.2f€"|format(Transaction["Total"]|float) }}
             </div>
