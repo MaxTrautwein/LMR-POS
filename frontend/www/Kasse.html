@@ -69,7 +69,7 @@
 
     //TODO Handle Invalid Data
     function AddItem(barcode) {
-        httpGetAsync(ServerAddress + "/item" + "?code=" + barcode, AddItemCallback)
+        httpGetAsync(GetServerAdress() + "/item" + "?code=" + barcode, AddItemCallback)
     }
 
     function AddItemCallback(data) {
@@ -135,7 +135,7 @@
     //Signal to the Backend that a Sale should be Made
     function MakeSale() {
         //TODO Reduce the Information given to ID & cnt
-        PostJson(Warenkorb,ServerAddress + "/make_sale")
+        PostJson(Warenkorb,GetServerAdress() + "/make_sale")
 
         //TODO Add other site for Rückgeld & Co
         //TODO maybe check for success

@@ -39,11 +39,11 @@
     let PDF_RequestJson = []
     function RequestExport(){
         Output.val('');
-        httpGetAsync(ServerAddress + "/ExportSheet" + "?id=" + SaleID.val(), FormatExport);
+        httpGetAsync(GetServerAdress() + "/ExportSheet" + "?id=" + SaleID.val(), FormatExport);
     }
 
     function UpdatePDF(){
-        PostJson( PDF_RequestJson, ServerAddress + "/GeneratePDF");
+        PostJson( PDF_RequestJson, GetServerAdress() + "/GeneratePDF");
     }
     function FormatExport(data){
         PDF_RequestJson = []

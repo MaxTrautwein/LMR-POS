@@ -97,7 +97,7 @@
             "bon_name":bon_name.val(),
             "Barcodes":barcodes.val().split('\n')
         }
-        PostJson(Data,ServerAddress + "/AddNewItem");
+        PostJson(Data,GetServerAdress() + "/AddNewItem");
 
         name.val('');
         cnt.val('');

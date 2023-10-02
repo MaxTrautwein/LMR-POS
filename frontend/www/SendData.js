@@ -1,5 +1,8 @@
 
-const ServerAddress = "http://127.0.0.1:5000"
+function GetServerAdress(){
+    return "http://" + window.location.host.split(':')[0] + ":5000"
+}
+
 function httpGetAsync(theUrl, callback) {
     let xmlHttp = new XMLHttpRequest();
     xmlHttp.onreadystatechange = function () {
