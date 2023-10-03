@@ -81,7 +81,7 @@ class Register:
         self._transmit('1B 70 00 64 32')
 
     # TODO Maybe add option to who made the Sale if User System is Implemented
-    def print(self, items: list[Item], system_time: time.struct_time, transaction_id: str = '00000000000') -> None:
+    def print(self, items: list[Item], system_time: str, transaction_id: str = '00000000000') -> None:
         if len(transaction_id) != 11:
             raise IdError
         if not items:
@@ -167,7 +167,8 @@ class Register:
             to_hex(' ') + '0D' +
 
             # output date
-            to_hex(system_time.strftime(f"%a, %d.%m.%Y, %H:%M:%S.{time.time() % 1000}:.03f")) +
+            # to_hex(system_time.strftime(f"%a, %d.%m.%Y, %H:%M:%S.{time.time() % 1000}:.03f")) +
+            to_hex(system_time) +
 
             # end memory flashing
             '1D 3A' +
