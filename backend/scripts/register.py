@@ -2,7 +2,9 @@ import datetime
 from os.path import exists
 from Interfaces import Item
 import time
+import logging
 
+logger = logging.getLogger('LMR_Log')
 
 # Exceptions
 class TransmitError(Exception):
@@ -66,7 +68,8 @@ class Register:
         # reset
         self._transmit('10 05 40')
 
-        time.sleep(1)
+        # Do not lower Init time!
+        time.sleep(3)
 
         # TODO: set default config
 
@@ -95,6 +98,8 @@ class Register:
             # check for correct tax rate
             if item.tax != tax:
                 raise InconsistentTaxError
+            taxFactor : float = 1.0 + tax
+            taxPrecent = f"{int(tax * 100)}%"
 
             # line length = 42 chars -> 3 margin, 9 cnt, 17 name, 10 price, 3 margin
             cart += to_hex('   ')
@@ -137,12 +142,12 @@ class Register:
 
             to_hex('   ') +
             to_hex(f"{'Netto ':26}") +
-            to_hex(f"{total / (1 + tax):6.2f} Eur") +
+            to_hex(f"{total / taxFactor:6.2f} Eur") +
             to_hex('   ') + '0D' +
 
             to_hex('   ') +
-            to_hex(f"{'MWST (' + str(tax * 100) + '%)' :26}") +
-            to_hex(f"{total - (total / (1 + tax)):6.2f} Eur") +
+            to_hex(f"{'MWST (' + taxPrecent + ')' :26}") +
+            to_hex(f"{total - (total / taxFactor):6.2f} Eur") +
             to_hex('   ') + '0D' +
 
             to_hex('                             ----------   ') + '0D' +

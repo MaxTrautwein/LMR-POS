@@ -193,3 +193,35 @@ def GeneratePDF_Printout():
             transaction["date"] = "ERROR"
         PageSetup[-1]["Items"].append(transaction)
     return jsonify(content)
+
+
+@app.route('/debug_sale', methods=['POST'])
+def DebugSale():
+    content = request.json
+
+    SeperateBons = {}
+    
+    if (len(content) == 0):
+        logger.error("Attemped Sale with no Items")
+        abort(400)
+    # Convert Basket from Frontend into compatible format for Printing
+    for item in content:
+        newItem = db.GetItemByID(item["id"])
+        newItem.SetCount(item['cnt'])
+
+        tax = newItem.tax
+        if not tax in SeperateBons:
+            SeperateBons[tax] = []
+        SeperateBons[tax].append(newItem)
+    for _, taxBracked in SeperateBons.items():
+        # Don't save The Transaction for debugging
+        TransactionID = 0 # Debugging Sale ID (0 will never be a real Sale ID)
+        date = datetime.now() # Get the Current Time
+        # Print the Bon
+        Register.print(taxBracked,date,f"{TransactionID:011}")
+
+    #Open the Register
+    Register.open()
+
+    #What if any should we return !?
+    return jsonify(content)
