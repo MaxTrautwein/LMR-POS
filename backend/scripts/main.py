@@ -2,7 +2,7 @@ import logging
 import signals
 import db
 import register
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, abort
 from flask_cors import CORS
 from datetime import datetime
 
@@ -84,6 +84,9 @@ def MakeSale():
 
     SeperateBons = {}
     
+    if (len(content) == 0):
+        logger.error("Attemped Sale with no Items")
+        abort(400)
     #Convert Basket from Frontend into compatible format for Printing
     for item in content:
         newItem = db.GetItemByID(item["id"])
