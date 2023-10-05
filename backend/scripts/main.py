@@ -5,6 +5,8 @@ import register
 from flask import Flask, request, jsonify, render_template, abort
 from flask_cors import CORS
 from datetime import datetime
+import time
+
 
 logger = logging.getLogger('LMR_Log')
 logger.setLevel(logging.DEBUG)
@@ -103,6 +105,10 @@ def MakeSale():
         logger.debug(f"printing on for {taxBracked}")
         #Print the Bon
         Register.print(taxBracked,date,f"{TransactionID:011}")
+        # TODO Add function to check if the printer is ready
+        # TODO Optionally as a wait function on the print command 
+        time.sleep(5)
+
 
     #Open the Register
     Register.open()
