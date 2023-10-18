@@ -16,10 +16,10 @@
 
 <template id="itemRowTemplate">
     <div class="row border item-row">
-        <div class="col" data-template="cnt"></div>
-        <div class="col" data-template="name"></div>
-        <div class="col" data-template="price"></div>
-        <div class="col" data-template="total"></div>
+        <div class="col"><span  data-template="cnt"></span></div>
+        <div class="col"><span  data-template="name"></span></div>
+        <div class="col"><span  data-template="price"></span>&euro;</div>
+        <div class="col"><span  data-template="total"></span>&euro;</div>
     </div>
 </template>
 
@@ -38,7 +38,7 @@
 
             <div class="row mt-auto TotalSum">
                 <div class="col"><strong>Gesamtpreis</strong></div>
-                <div id="TotalPrice" class="col">TBD</div>
+                <div class="col"> <span id="TotalPrice">TBD</span>&euro;</div>
             </div>
         </div>
 
