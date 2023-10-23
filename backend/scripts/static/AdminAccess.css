@@ -1,0 +1,7 @@
+
+.limiter{
+    max-width: 60%;
+    margin-right: auto;
+    margin-left: auto;
+    min-width: 600px;
+}
