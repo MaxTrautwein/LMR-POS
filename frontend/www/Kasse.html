@@ -94,6 +94,18 @@
         UpdateWarenkorb();
     }
 
+    function AddCount(cnt){
+        let lastItem = Warenkorb.pop();
+        let NewCnt = lastItem["cnt"] + cnt;
+
+        if (NewCnt > 0) {
+            lastItem["cnt"] = NewCnt;
+            Warenkorb.push(lastItem);
+        }
+
+        UpdateWarenkorb();
+    }
+
     //Draw / Re-Draw the Basket
     function UpdateWarenkorb() {
 
@@ -165,7 +177,9 @@
                 default:
                     break;
             }
-
+        } else if (data.startsWith('LMRßADDß')){
+            let amount = Number(data.replace('LMRßADDß','').replace("ß","-"));
+            AddCount(amount);
         } else {
             data = data.replace("ß","-");
             AddItem(data);
