@@ -178,7 +178,7 @@
                     break;
             }
         } else if (data.startsWith('LMRßADDß')){
-            let amount = Number(data.replace('LMRßADDß',''))
+            let amount = Number(data.replace('LMRßADDß','').replace("ß","-"));
             AddCount(amount);
         } else {
             data = data.replace("ß","-");
