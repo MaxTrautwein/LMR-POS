@@ -51,7 +51,7 @@
         TransactionID.val(Number(TransactionID.val()) + 1);
         for (let i = 0 ; i < data.length;i++){
             let SaleEntry = data[i];
-            let line = `\t${TransactionID.val()}\t${SaleEntry["SaleDay"]}\t${SaleEntry["SaleMonth"]}\t${SaleEntry["EntryDay"]}\t${SaleEntry["EntryMonth"]}\t${SaleEntry["Desc"]}\t\t${SaleEntry["Amount"].replace(".",",")}`
+            let line = `\t${TransactionID.val()}\t${SaleEntry["SaleDay"]}\t${SaleEntry["SaleMonth"]}\t${SaleEntry["EntryDay"]}\t${SaleEntry["EntryMonth"]}\t${SaleEntry["Desc"]}; TaxRate:${SaleEntry["Tax"]}\t\t${SaleEntry["Amount"].replace(".",",")}`
             if (i === 0){
                 Output.val(line)
             }else {

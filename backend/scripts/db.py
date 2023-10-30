@@ -94,11 +94,13 @@ def GenerateTransactionExportSheet(id):
        "extract(month  from now()) as \"Book Month\"," +
        "concat('LMR Verkauf ID: ', transaction.id)," +
        "sum(position.total)," +
-       "transaction.id " +
-       "from transaction_position , position, transaction" +
+       "transaction.id, " +
+       "items.tax " + 
+       "from transaction_position , position, transaction, items" +
         " where transaction_position.trans = transaction.id and transaction_position.pos = position.id" +
         " and transaction.id > {}".format(id) +
-        " group by transaction.sale_date, transaction.id order by transaction.sale_date;")
+        " and items.id = position.product"
+        " group by transaction.sale_date, transaction.id, items.tax order by transaction.sale_date;")
     data = cur.fetchall()
     ReturnData = []
     for sale in data:
@@ -109,7 +111,8 @@ def GenerateTransactionExportSheet(id):
             "EntryDay":sale[2],
             "EntryMonth":sale[3],
             "Desc":sale[4],
-            "Amount":sale[5]
+            "Amount":sale[5],
+            "Tax":sale[7]
         })
     return ReturnData
 
