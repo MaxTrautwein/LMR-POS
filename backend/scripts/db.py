@@ -40,7 +40,7 @@ def SaveTransaction(Items):
 
     #Get Transaction ID
     #TODO Add user System
-    execute("insert into transaction (personal, sale_date) VALUES ('{}',now()) returning id, sale_date;".format("Max Musterman"))
+    execute("insert into transaction (personal, sale_date) VALUES ('{}',clock_timestamp()) returning id, sale_date;".format("Max Musterman"))
     trans_id, sale_date = cur.fetchone()
     commit()
     for item in Items:
@@ -54,7 +54,7 @@ def SaveTransaction(Items):
         #Create Links
         execute("insert into transaction_position (pos, trans) VALUES ({},{});".format(pos_id,trans_id))
         commit()
-    execute("update transaction set sale_date=now() where id={};".format(trans_id))
+    execute("update transaction set sale_date=clock_timestamp() where id={};".format(trans_id))
     commit()
     return trans_id, sale_date
 
@@ -90,8 +90,8 @@ def GenerateTransactionExportSheet(id):
     logger.info("Generate Export far Salse after " + str(id))
     execute("SELECT extract(day  from transaction.sale_date) as \"Sale Day\"," +
        "extract(month  from transaction.sale_date) as \"Sale Month\"," +
-       "extract(day  from now()) as \"Book Day\"," +
-       "extract(month  from now()) as \"Book Month\"," +
+       "extract(day  from clock_timestamp()) as \"Book Day\"," +
+       "extract(month  from clock_timestamp()) as \"Book Month\"," +
        "concat('LMR Verkauf ID: ', transaction.id)," +
        "sum(position.total)," +
        "transaction.id, " +
