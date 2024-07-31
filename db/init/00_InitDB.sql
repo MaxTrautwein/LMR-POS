@@ -1,18 +1,18 @@
-DROP TABLE IF EXISTS Manufacturer;
-DROP TABLE IF EXISTS Tax;
-DROP TABLE IF EXISTS Supplier;
-DROP TABLE IF EXISTS SpecificItem;
-DROP TABLE IF EXISTS Barcode;
-DROP TABLE IF EXISTS ProductBarcodes;
-DROP TABLE IF EXISTS FeatureTag;
-DROP TABLE IF EXISTS SpecificItemTag;
-DROP TABLE IF EXISTS Purchase;
-DROP TABLE IF EXISTS Item;
 DROP TABLE IF EXISTS SpecificToPseudo;
+DROP TABLE IF EXISTS SpecificItemTag;
+DROP TABLE IF EXISTS ProductBarcodes;
+DROP TABLE IF EXISTS Purchase;
+DROP TABLE IF EXISTS SpecificItem;
+DROP TABLE IF EXISTS Manufacturer;
+DROP TABLE IF EXISTS Supplier;
+DROP TABLE IF EXISTS Barcode;
+DROP TABLE IF EXISTS FeatureTag;
 DROP TABLE IF EXISTS ItemPriceHistory;
+DROP TABLE IF EXISTS Transaction_Position;
 DROP TABLE IF EXISTS Transaction;
 DROP TABLE IF EXISTS Position;
-DROP TABLE IF EXISTS Transaction_Position;
+DROP TABLE IF EXISTS Item;
+DROP TABLE IF EXISTS Tax;
 
 
 -- We expect to have a Manufacturer for more then one item.
