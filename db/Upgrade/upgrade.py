@@ -244,8 +244,8 @@ for id, product, count, total in positions:
 cur.execute("select * from o_transaction")
 transactions = cur.fetchall()
 for id, personal, saleDate in transactions:
-    # TODO Currently fails with the Date We need to fix that
-    cur.execute(f"insert into transaction (personal, saleDate) Values ('{personal}', {saleDate}) returning id")
+    cur.execute("insert into transaction (personal, sale_date) Values (%s, %s) returning id"
+                ,(personal, saleDate))
     OldToNewTransactionID[id] = cur.fetchone()[0]
     con.commit()
 
