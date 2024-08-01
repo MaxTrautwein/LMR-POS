@@ -20,10 +20,11 @@ Delimiter_Color = '/'
 Delimiter_Details = ';'
 
 # TODO: Init Steuer
-Steuer = [ (0.19, "Mehrwertsteuer" ), (0.07, "Reduzierte Mehrwertsteuer")]
+Steuer = [(0.19, "Mehrwertsteuer"), (0.07, "Reduzierte Mehrwertsteuer")]
 
 # TODO: Existing Product Supplier
 ExistingProductSupp = ("Existing Products", "-", "Already Existing Stock")
+ExistingProductSuppID = -1
 
 con = psycopg2.connect(
     f"dbname='{database}' user='{user}' host='{host}' password='{password}'")
@@ -120,7 +121,7 @@ for percent, name in Steuer:
     result = len(cur.fetchall())
     if result == 0:
         # Init for that Tax is missing
-        cur.execute("insert into tax (name,amount) values ('{}',{})".format(name,percent))
+        cur.execute("insert into tax (name,amount) values ('{}',{})".format(name, percent))
         con.commit()
 print("Prepare Tax Done")
 
@@ -129,7 +130,10 @@ cur.execute(f"select name from supplier where name = '{ExistingProductSupp[0]}'"
 result = len(cur.fetchall())
 if result == 0:
     # We still need to create The Existing Product Supplier
-    cur.execute("insert into supplier (name,url,notes) values ('{}','{}','{}')".format(ExistingProductSupp[0],ExistingProductSupp[1],ExistingProductSupp[2]))
+    cur.execute("insert into supplier (name,url,notes) values ('{}','{}','{}') returning id".format(ExistingProductSupp[0],
+                                                                                       ExistingProductSupp[1],
+                                                                                       ExistingProductSupp[2]))
+    ExistingProductSuppID = cur.fetchone()[0]
     con.commit()
 print("Prepare Supplier Done")
 
@@ -140,24 +144,31 @@ for barcode in barcodes:
     if barcode[0] in NoData:
         print(f"Detected No Data Entry for Barcode: {barcode[0]}")
         continue
-    cur.execute(f"select barcode from o_barcodes where barcode = '{barcode[0]}'")
+    cur.execute(f"select barcode from barcode where code = '{barcode[0]}'")
     result = len(cur.fetchall())
     if result == 0:
         # New Barcode
         cur.execute("insert into barcode (code) values ('{}')".format(barcode[0]))
+        con.commit()
 
 
-def saveTagLink(tag,itemID):
+def saveTagLink(tag, itemID):
     cur.execute(f"select id from featuretag where tag = '{tag}'")
     tagID = cur.fetchone()[0]
     cur.execute(f"insert into specificitemtag (tag, item) values ({tagID}, {itemID})")
     con.commit()
 
+
 # 1.5.4 Actually Transfer the Products
+OldToNewItemID = {}
+OldToNewPositionID = {}
+OldToNewTransactionID = {}
+
 cur.execute(f"select * from o_items")
 oldItems = cur.fetchall()
-for id, name, count, price, manufacturer, color, minCount, details, size, tax in oldItems:
-    print(f"id: {id}, name: {name} - {count} - {price} - {manufacturer} - {color} - {minCount} - {details} - {size} - {tax}")
+for id, name, count, price, manufacturer, color, minCount, details, size, tax, bon_name in oldItems:
+    print(
+        f"id: {id}, name: {name} - {count} - {price} - {manufacturer} - {color} - {minCount} - {details} - {size} - {tax} - {bon_name}")
     if manufacturer in NoData:
         manufacturer = "Unknown"
     cur.execute(f"select id from manufacturer where name = '{manufacturer}'")
@@ -173,7 +184,7 @@ for id, name, count, price, manufacturer, color, minCount, details, size, tax in
             print(f"Detected No Data Entry for Barcode: {barcode[0]}")
             continue
         # Get the ID of that Barcode
-        cur.execute(f"select id from barcodes where code = '{barcode[0]}'")
+        cur.execute(f"select id from barcode where code = '{barcode[0]}'")
         barcodeID = cur.fetchone()[0]
         # Now we can Link to that Barcode
         cur.execute(f"insert into productbarcodes (product, code) values ({specificItemID}, {barcodeID})")
@@ -199,4 +210,51 @@ for id, name, count, price, manufacturer, color, minCount, details, size, tax in
     else:
         saveTagLink(sizeStrip, specificItemID)
 
-    #
+    # Transfer the Item
+    cur.execute(f"insert into item (name, bon_name, min_cnt)  Values ('{name}', '{bon_name}', {minCount}) returning id")
+    itemID = cur.fetchone()[0]
+    con.commit()
+
+    # Save the ID Relation so that we can reconstruct the Transactions
+    OldToNewItemID[id] = itemID
+
+    # Find the Matching Tax ID
+    cur.execute(f"select id from tax where amount = {tax}")
+    TaxID = cur.fetchone()[0]
+
+    # Register a Purchase for the Existing Stock
+    cur.execute(f"insert into purchase (specificitem, cnt, supplier, buyprice, tax, notes) Values ({specificItemID},"
+                f" {count}, {ExistingProductSuppID}, {0.00}, {TaxID},'Existing Items - DB Upgrade')")
+    con.commit()
+
+    # Configure the Price for that Item
+    cur.execute(f"insert into itempricehistory (item, price, tax) Values ({itemID},{price},{TaxID}) ")
+    con.commit()
+
+# 1.6 Reconstruct the Purchases
+# 1.6.1 Positions
+cur.execute("select * from o_position")
+positions = cur.fetchall()
+for id, product, count, total in positions:
+    cur.execute(f"insert into position (product, count) Values ({product}, {count}) returning id")
+    OldToNewPositionID[id] = cur.fetchone()[0]
+    con.commit()
+
+# 1.6.2 Transactions
+cur.execute("select * from o_transaction")
+transactions = cur.fetchall()
+for id, personal, saleDate in transactions:
+    # TODO Currently fails with the Date We need to fix that
+    cur.execute(f"insert into transaction (personal, saleDate) Values ('{personal}', {saleDate}) returning id")
+    OldToNewTransactionID[id] = cur.fetchone()[0]
+    con.commit()
+
+# 1.6.3 Transaction Positions
+cur.execute(f"select * from o_transaction_position")
+transactionPositions = cur.fetchall()
+for id, oPos, oTrans in transactionPositions:
+    cur.execute(f"insert into transaction_position (pos, trans) "
+                f"Values ({OldToNewPositionID[oPos]}, {OldToNewTransactionID[oTrans]})")
+    con.commit()
+
+print("Done")

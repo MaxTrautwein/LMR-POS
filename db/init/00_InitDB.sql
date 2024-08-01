@@ -88,7 +88,7 @@ create TABLE Purchase
     dateAdded timestamp, -- when did wie add this?
     dateBuy timestamp,  -- when was this bought?
     supplier integer references Supplier(id) not null,
-    buyPrice numeric not null, -- INCLUDING TAX
+    buyPrice numeric not null, -- INCLUDING TAX - use 0 to mark as unknown
     tax integer references Tax(id) not null,
     notes text -- in case of other Notes
 );
@@ -120,6 +120,7 @@ create TABLE SpecificToPseudo -- Link one or more SpecificItem's to a Pseudo Ite
 create TABLE ItemPriceHistory -- We may need to Update Prices every now and then
 -- When we do that we would still want to know the Real Price of an Old Transaction
 -- To Not Duplicate Data we Shall Document Price Changes of the Things we Sell
+-- May ONLY be deleted if the "Item" has been deleted
 (
     id serial PRIMARY KEY,
     item integer references Item(id)  not null,
@@ -153,3 +154,9 @@ create TABLE Transaction_Position
     pos   integer references position (id)    not null,
     trans integer references Transaction (id) not null
 );
+
+-- TODO Maybe add ways to enforce the described rules
+-- But DON'T USE "rules" as according to some online Reports they break "... retuning ..."
+-- A very useful feature that we also use a lot...
+
+-- TODO Maybe add Views to Simplify some Access
