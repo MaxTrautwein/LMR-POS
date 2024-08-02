@@ -160,3 +160,16 @@ create TABLE Transaction_Position
 -- A very useful feature that we also use a lot...
 
 -- TODO Maybe add Views to Simplify some Access
+
+-- Get Tags Linked to a Specific Item
+CREATE OR REPLACE FUNCTION GetLinkedTags(specificitemID int)
+returns table (tag text)
+language plpgsql
+as $$
+    begin
+        return query select featuretag.tag
+                     from featuretag, specificitemtag
+                     where featuretag.id = specificitemtag.tag
+                               and specificitemID = specificitemtag.item;
+    end;
+    $$
