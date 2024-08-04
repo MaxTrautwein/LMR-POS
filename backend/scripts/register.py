@@ -6,6 +6,7 @@ import logging
 
 logger = logging.getLogger('LMR_Log')
 
+
 # Exceptions
 class TransmitError(Exception):
     pass
@@ -98,7 +99,7 @@ class Register:
             # check for correct tax rate
             if item.tax != tax:
                 raise InconsistentTaxError
-            taxFactor : float = 1.0 + tax
+            taxFactor: float = 1.0 + tax
             taxPrecent = f"{int(tax * 100)}%"
 
             # line length = 42 chars -> 3 margin, 9 cnt, 17 name, 10 price, 3 margin
@@ -114,7 +115,7 @@ class Register:
         self._transmit(
             # start flashing to memory
             '1D 3A 01'
-            
+
             # centered Header
             '1B 61 01' +
             to_hex('LMR HS-Esslingen') + '0D' +
