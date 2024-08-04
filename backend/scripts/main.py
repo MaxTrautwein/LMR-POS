@@ -2,10 +2,11 @@ import logging
 import signals
 import db
 import register
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
-from models import PseudoItem, BaseModel
+from models import PseudoItem, BaseModel, BasketPosition
 from functools import wraps
+from typing import TypeVar
 
 logger = logging.getLogger('LMR_Log')
 logger.setLevel(logging.DEBUG)
@@ -59,6 +60,7 @@ app = Flask(__name__)
 CORS(app)
 
 init()
+T = TypeVar('T', bound='BaseModel')
 
 
 # Wrapper Function, so that we can Return Classes defiled in models
@@ -74,6 +76,12 @@ def jsonify_response(func):
     return wrapper
 
 
+# Parse Json to List of BaseModel Descendant
+# Currently used Basket when making a Sale
+def jsonToListOfModel(json: list[dict], model_class: T) -> list[T]:
+    return [model_class(**data) for data in json]
+
+
 # Init Register
 Register = register.Register("/dev/ttyS0")
 
@@ -81,9 +89,19 @@ Register = register.Register("/dev/ttyS0")
 def getRegister() -> register.Register:
     return Register
 
-@app.get("/test")
-@jsonify_response
+
+@app.route('/test', methods=['POST'])
 def test():
-    # item = PseudoItem.PseudoItem("name", "desc", 12.3)
-    # return item
-    return db.GetItemPriceAndTax(27)
+    content = request.json
+    logger.info(content)
+
+    data = jsonToListOfModel(content, BasketPosition.BasketPosition)
+    if len(data) == 0:
+        logger.error("Attempted Sale with no Items")
+    logger.info(data)
+
+    for position in data:
+        logger.info(position.getItemID())
+        logger.info(position.getCNT())
+
+    return content
