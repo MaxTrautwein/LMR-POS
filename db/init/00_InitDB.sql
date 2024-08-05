@@ -1,6 +1,5 @@
-DROP TABLE IF EXISTS SpecificToPseudo;
+DROP TABLE IF EXISTS SpecificToGroup;
 DROP TABLE IF EXISTS SpecificItemTag;
-DROP TABLE IF EXISTS ProductBarcodes;
 DROP TABLE IF EXISTS Purchase;
 DROP TABLE IF EXISTS SpecificItem;
 DROP TABLE IF EXISTS Manufacturer;
@@ -11,7 +10,7 @@ DROP TABLE IF EXISTS ItemPriceHistory;
 DROP TABLE IF EXISTS Transaction_Position;
 DROP TABLE IF EXISTS Transaction;
 DROP TABLE IF EXISTS Position;
-DROP TABLE IF EXISTS Item;
+DROP TABLE IF EXISTS ItemGroup;
 DROP TABLE IF EXISTS Tax;
 
 
@@ -30,6 +29,7 @@ CREATE TABLE Tax -- DO NOT delete Entry's, if they are no longer Valid Deprecate
     amount numeric not null,
     deprecatedDate timestamp -- if deprecated ; Document the Date where that took effect
 );
+comment on column Tax.deprecatedDate IS 'if deprecated ; Document the Date where that took effect';
 
 create TABLE Supplier
 (
@@ -39,32 +39,32 @@ create TABLE Supplier
     notes text -- In case we want to leave internal notes about Suppliers
 );
 
+comment on column Supplier.url is 'Web Page where we buy';
+
 -- An Actual Product that we can Buy
 -- Delete is not allowed
 CREATE TABLE SpecificItem
 (
     id          serial PRIMARY KEY,
     name        text NOT NULL,
+    bon_name     text, -- If Set overrides whatever is set in the Group
+    min_cnt      integer, -- (override) How much do we want to have in Stock
     manufacturer    integer references Manufacturer (id),
     itemBuyURL text, -- Optional buy URL of this Item
     itemURL text, -- Optional URL of this Item with Data for it
     notes text -- In case we want to note some stuff down
 );
 
+comment on column SpecificItem.bon_name IS 'override itemGroup bon_name';
+comment on column SpecificItem.min_cnt IS 'override itemGroup min_cnt';
+comment on column SpecificItem.itemBuyURL IS 'optional where to buy URL';
+comment on column SpecificItem.itemURL IS 'optional details URL';
 
 CREATE TABLE Barcode
 (
     id serial PRIMARY KEY,
-    code text not null -- The Barcode Itself
-);
-
-CREATE TABLE ProductBarcodes -- A Single Product can have more then one Barcode
--- Special Barcodes might apply to a Pseudo Item int turn affecting more then one SpecificItem
--- That might be required if a Barcode is not available
-(
-    id serial PRIMARY KEY,
-    product integer references SpecificItem(id) not null ,
-    code integer references Barcode(id) not null
+    code text not null, -- The Barcode Itself
+    product integer references SpecificItem(id) not null
 );
 
 create TABLE FeatureTag -- Some Important Fact about a SpecificItem
@@ -72,6 +72,8 @@ create TABLE FeatureTag -- Some Important Fact about a SpecificItem
     id serial PRIMARY KEY,
     tag text not null  -- The Fact (A4, White, green, Thick, thin, HB, 0.5mm)
 );
+
+comment on column FeatureTag.tag IS 'The Fact (A4, White, green, Thick, thin, HB, 0.5mm)';
 
 create TABLE SpecificItemTag -- Map Tags to Items
 (
@@ -93,10 +95,12 @@ create TABLE Purchase
     notes text -- in case of other Notes
 );
 
+comment on column Purchase.buyPrice IS 'INCLUDING TAX - use 0 to mark as unknown';
 
 
-CREATE TABLE Item -- A Pseudo Item; Just the Item that we Sell, not specifically linked to a Manufacturer
--- If the Pseudo Item is Linked to a Sale it MUST NOT be Deleted
+CREATE TABLE ItemGroup -- A Item Group, Specific Items with a common Name,
+-- the same price and maybe the same Bon Name
+-- If the Item Group is Linked to a Sale it MUST NOT be Deleted
 -- It may be Deprecated
 (
     id           serial PRIMARY KEY,
@@ -107,12 +111,12 @@ CREATE TABLE Item -- A Pseudo Item; Just the Item that we Sell, not specifically
 );
 
 
-create TABLE SpecificToPseudo -- Link one or more SpecificItem's to a Pseudo Item
+create TABLE SpecificToGroup -- Link one or more SpecificItem's to a Item Group
 -- DO NOT delete, Deprecate Instead
 -- May ONLY be deleted if the "Item" has been deleted
 (
     id          serial primary key,
-    pseudo      integer references Item(id) not null,
+    itemGroup      integer references ItemGroup(id)    not null,
     specific    integer references SpecificItem(id) not null,
     deprecated  timestamp -- If No Longer In Use, Preserve History
 );
@@ -123,9 +127,9 @@ create TABLE ItemPriceHistory -- We may need to Update Prices every now and then
 -- May ONLY be deleted if the "Item" has been deleted
 (
     id serial PRIMARY KEY,
-    item integer references Item(id)  not null,
-    price numeric NOT NULL, -- Our Sell Price including Tax
-    tax integer references Tax(id) not null,
+    item integer references ItemGroup(id) not null,
+    price numeric                         NOT NULL, -- Our Sell Price including Tax
+    tax integer references Tax(id)        not null,
     deprecatedDate timestamp -- if deprecated; Document the Date where that took effect
 );
 
@@ -143,7 +147,7 @@ create TABLE Transaction -- TODO Add stuff we probably need for TSE
 CREATE TABLE Position
 (
     id      serial PRIMARY KEY,
-    product integer references Item (id) not null,
+    product integer references SpecificItem (id) not null,
     count   integer                       not null
 );
 
@@ -156,20 +160,41 @@ create TABLE Transaction_Position
 );
 
 -- TODO Maybe add ways to enforce the described rules
--- But DON'T USE "rules" as according to some online Reports they break "... retuning ..."
--- A very useful feature that we also use a lot...
+-- Probably beset to Use some process that enforces this
+-- if there is a Valid reason to go against that, it shall be done manually by someone that knows what they are doing
 
 -- TODO Maybe add Views to Simplify some Access
 
 -- Get Tags Linked to a Specific Item
-CREATE OR REPLACE FUNCTION GetLinkedTags(specificitemID int)
+CREATE OR REPLACE FUNCTION GetLinkedTags(specificItemID int)
 returns table (tag text)
-language plpgsql
 as $$
     begin
-        return query select featuretag.tag
-                     from featuretag, specificitemtag
-                     where featuretag.id = specificitemtag.tag
-                               and specificitemID = specificitemtag.item;
+        return query select f.tag
+                     from featuretag f, specificitemtag s
+                     where f.id = s.tag
+                               and specificItemID = s.item;
     end;
-    $$
+    $$ language plpgsql;
+
+-- Get the ID of an Item By Barcode
+-- Returns Nothing if it doesn't exist
+CREATE OR REPLACE FUNCTION GetSpecificItemID(barcodeScan text)
+returns table (id integer)
+as $$
+    begin
+        return query select b.product from barcode b where b.code = barcodeScan;
+    end;
+    $$ language plpgsql;
+
+-- Get the Item Price & Tax amount for a Item ID
+CREATE OR REPLACE FUNCTION GetCurrentSpecificItemPriceAndTax(specificItemID int)
+returns table (price numeric, tax numeric)
+as $$
+    begin
+        return query select h.price, t.amount from specifictogroup s, itemgroup g, itempricehistory h, tax t
+         where s.specific = 123 and s.deprecated is NULL and g.deprecated = false
+           and h.deprecateddate is null and s.itemgroup = g.id and g.id = h.item and t.id = h.tax ;
+    end;
+    $$ language plpgsql;
+

@@ -9,13 +9,13 @@ from models import PseudoItem
 logger = logging.getLogger('LMR_Log')
 
 
-# Get Pseudo Item ID by Barcode
+# Get SpecificItem ID by Barcode
 def GetItemID(barcode: str) -> int:
-    execute(f"select s.pseudo from barcode b, productbarcodes p, specifictopseudo s where"
-            f" p.code = b.id and s.specific = p.product and s.deprecated IS NULL and b.code = '{barcode}';")
+    execute(f"select * from GetSpecificItemID('{barcode}')")
     return cur.fetchone()[0]
 
 
+# TODO Update for V5
 # Get all Tags linked to that pseudo Item
 def GetItemTags(itemID: int) -> list[str]:
     tags: list[str] = []
