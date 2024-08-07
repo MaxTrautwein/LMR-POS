@@ -1,8 +1,6 @@
 DROP TABLE IF EXISTS SpecificToGroup;
 DROP TABLE IF EXISTS SpecificItemTag;
 DROP TABLE IF EXISTS Purchase;
-DROP TABLE IF EXISTS SpecificItem;
-DROP TABLE IF EXISTS Manufacturer;
 DROP TABLE IF EXISTS Supplier;
 DROP TABLE IF EXISTS Barcode;
 DROP TABLE IF EXISTS FeatureTag;
@@ -10,6 +8,8 @@ DROP TABLE IF EXISTS ItemPriceHistory;
 DROP TABLE IF EXISTS Transaction_Position;
 DROP TABLE IF EXISTS Transaction;
 DROP TABLE IF EXISTS Position;
+DROP TABLE IF EXISTS SpecificItem;
+DROP TABLE IF EXISTS Manufacturer;
 DROP TABLE IF EXISTS ItemGroup;
 DROP TABLE IF EXISTS Tax;
 
@@ -193,7 +193,7 @@ returns table (price numeric, tax numeric)
 as $$
     begin
         return query select h.price, t.amount from specifictogroup s, itemgroup g, itempricehistory h, tax t
-         where s.specific = 123 and s.deprecated is NULL and g.deprecated = false
+         where s.specific = specificItemID and s.deprecated is NULL and g.deprecated = false
            and h.deprecateddate is null and s.itemgroup = g.id and g.id = h.item and t.id = h.tax ;
     end;
     $$ language plpgsql;

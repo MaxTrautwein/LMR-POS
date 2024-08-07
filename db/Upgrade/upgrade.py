@@ -5,6 +5,12 @@ import time
 # -- This File Shall aid in the Upgrade from the first DB Layout to the Second one
 # -- First Make a Backup of the Current Status
 # -- Rename All Table by prepending a "o_"
+# This can be done via:
+#   sed -i 's/barcodes/o_barcodes/g' dump.sql
+#   sed -i 's/items/o_items/g' dump.sql
+#   sed -i 's/position/o_position/g' dump.sql
+#   sed -i 's/transaction/o_transaction/g' dump.sql
+#   sed -i 's/o_transaction_o_position/o_transaction_position/g' dump.sql
 # -- Load the new InitDB and create the new Tables
 
 
@@ -155,21 +161,6 @@ def PrepareExistingProductSupp():
     print("Prepare Supplier Done")
 
 
-# 1.5.3 Transfer Barcodes
-def TransferBarcodes():
-    global barcode, result
-    cur.execute(f"select barcode from o_barcodes")
-    barcodes = cur.fetchall()
-    for barcode in barcodes:
-        if barcode[0] in NoData:
-            print(f"Detected No Data Entry for Barcode: {barcode[0]}")
-            continue
-        cur.execute(f"select barcode from barcode where code = '{barcode[0]}'")
-        result = len(cur.fetchall())
-        if result == 0:
-            # New Barcode
-            cur.execute("insert into barcode (code) values ('{}')".format(barcode[0]))
-            con.commit()
 
 
 def saveTagLink(tag, itemID):
@@ -206,12 +197,16 @@ def TransferItems():
             if barcode[0] in NoData:
                 print(f"Detected No Data Entry for Barcode: {barcode[0]}")
                 continue
-            # Get the ID of that Barcode
-            cur.execute(f"select id from barcode where code = '{barcode[0]}'")
-            barcodeID = cur.fetchone()[0]
-            # Now we can Link to that Barcode
-            cur.execute(f"insert into productbarcodes (product, code) values ({specificItemID}, {barcodeID})")
+            # Now we can Save the Barcode
+            cur.execute(f"insert into barcode (code, product) values ('{barcode[0]}', {specificItemID})")
             con.commit()
+
+            cur.execute(f"select barcode from barcode where code = '{barcode[0]}'")
+            duplicateCheck = len(cur.fetchall())
+            if duplicateCheck > 1:
+                # Error we have a duplicate
+                print(f"Duplicate Barcode: {barcode[0]} - ACTION NEEDED")
+
 
         # Lets Link the Tags
         for singleColor in color.split(Delimiter_Color):
@@ -233,14 +228,14 @@ def TransferItems():
         else:
             saveTagLink(sizeStrip, specificItemID)
 
-        # Transfer the Item
+        # Transfer Item Group
         cur.execute(
-            f"insert into item (name, bon_name, min_cnt)  Values ('{name}', '{bon_name}', {minCount}) returning id")
-        itemID = cur.fetchone()[0]
+            f"insert into itemgroup (name, bon_name, min_cnt)  Values ('{name}', '{bon_name}', {minCount}) returning id")
+        groupID = cur.fetchone()[0]
         con.commit()
 
         # Save the ID Relation so that we can reconstruct the Transactions
-        OldToNewItemID[id] = itemID
+        OldToNewItemID[id] = specificItemID
 
         # Find the Matching Tax ID
         cur.execute(f"select id from tax where amount = {tax}")
@@ -253,11 +248,11 @@ def TransferItems():
         con.commit()
 
         # Configure the Price for that Item
-        cur.execute(f"insert into itempricehistory (item, price, tax) Values ({itemID},{price},{TaxID}) ")
+        cur.execute(f"insert into itempricehistory (item, price, tax) Values ({groupID},{price},{TaxID}) ")
         con.commit()
 
-        # Link the Product in specifictopseudo
-        cur.execute(f"insert into specifictopseudo (pseudo, specific) Values ({itemID},{specificItemID}) ")
+        # Link the Product in specifictogroup
+        cur.execute(f"insert into specifictogroup (itemgroup, specific) Values ({groupID},{specificItemID}) ")
         con.commit()
 
 
@@ -297,7 +292,6 @@ def ConvertToNewVersion():
     ConvertDetailsToTags()
     PrepareTax()
     PrepareExistingProductSupp()
-    TransferBarcodes()
     TransferItems()
     ReconstructPurchases()
 
@@ -305,17 +299,42 @@ def ConvertToNewVersion():
 ConvertToNewVersion()
 
 # 1.7 Cleanup
-# We had to create Pseudo Items for each Specific Item in ordered to preserve Transactions
-# We might have Specific Items that where never sold, so those linked pseudo Items may be removed alog
+# We had to create ItemGroups for each Specific Item in ordered to preserve Transactions
+# We might have Specific Items that where never sold, so those linked ItemGroups may be removed alog
 # With the relevant history and linking
-cur.execute(f"select id from item where id not in (select distinct position.product from position)")
+cur.execute(f"select id from specificitem where id not in (select distinct position.product from position)")
 unSoldProducts = [item[0] for item in cur.fetchall()]
 for id in unSoldProducts:
-    cur.execute(f"delete from itempricehistory where item = {id}")
+    # Now we need the Relevant Group that specificitem is in
+    cur.execute(f"select itemgroup from specifictogroup where specific = {id}")
+    groupID = cur.fetchone()[0]
+
+    # itempricehistory holds the previous Price of an Unsold Item
+    # We might want to preserve that price for future reference
+    cur.execute(f"select * from GetCurrentSpecificItemPriceAndTax({id})")
+    price, tax = cur.fetchone()
+    oldPriceStr = f"Old Price: {price} Tax: {tax}"
+    cur.execute(f"UPDATE specificitem SET notes = '{oldPriceStr}' WHERE id = {id}")
     con.commit()
-    cur.execute(f"delete from specifictopseudo where pseudo = {id}")
+
+    cur.execute(f"delete from itempricehistory where item = {groupID}")
     con.commit()
-    cur.execute(f"delete from item where id = {id}")
+    cur.execute(f"delete from specifictogroup where itemgroup = {groupID}")
+    con.commit()
+
+    cur.execute(f"select bon_name, min_cnt from itemgroup where id = {groupID}")
+    bonName, minCount = cur.fetchone()
+
+    # Since the item group also saves the min count and bon_name, and we don't want
+    # to lose data save them to the override before removing the group
+    cur.execute(f"UPDATE specificitem SET min_cnt = {minCount}  WHERE id = {id}")
+    con.commit()
+    # No need to save an Empty bonName
+    if bonName not in NoData:
+        cur.execute(f"UPDATE specificitem SET bon_name = '{bonName}'  WHERE id = {id}")
+        con.commit()
+
+    cur.execute(f"delete from itemgroup where id = {groupID}")
     con.commit()
 print("Removed Unused Pseudo Products")
 
