@@ -1,8 +1,9 @@
 import logging
-import colors
+from log import colors
 import signal
 
 logger = logging.getLogger('LMR_Log')
+
 
 class Interrupt(Exception):
     pass
