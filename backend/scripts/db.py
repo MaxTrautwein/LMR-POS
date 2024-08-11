@@ -19,27 +19,28 @@ def GetItemID(barcode: str) -> int:
 # Get all Tags linked to that pseudo Item
 def GetItemTags(itemID: int) -> list[str]:
     tags: list[str] = []
-    # Get All Specific Items Linked to that Pseudo Item ID
-    execute(f"select specific from specifictopseudo s where s.deprecated IS NULL and s.pseudo = {itemID}")
-    specifics = cur.fetchall()
-    for specific in specifics:
-        # Get all Tags for that Item
-        execute(f"select * from GetLinkedTags({specific[0]})")
-        tagRes = cur.fetchall()
-        for tag in tagRes:
-            tags.append(tag[0])
+    execute(f"select * from GetLinkedTags({itemID})")
+    tagRes = cur.fetchall()
+    for tag in tagRes:
+        tags.append(tag[0])
     return tags
+
 
 # Returns the Price and Tax of a Pseudo Item
 def GetItemPriceAndTax(itemID: int) -> tuple[decimal.Decimal, decimal.Decimal]:
-    execute(f"select p.price, t.amount from tax t, itempricehistory p "
-            f"where t.id = p.tax and p.deprecateddate is NULL and p.item = {itemID}")
+    execute(f"select * from GetCurrentSpecificItemPriceAndTax({itemID})")
     return cur.fetchall()[0]
 
+
 # Get the Name and bon Name of a Pseudo Item
-def GetItemNames(itemID: int) -> tuple[str, str]:
-    execute(f"select name, bon_name from item where id = {itemID}")
-    return cur.fetchall()[0]
+def GetItemName(itemID: int) -> str:
+    execute(f"select name from itemgroup where id = (select id from GetCurrentSpecificItemGroup({itemID}))")
+    return cur.fetchone()[0]
+
+
+def GetItemBonName(itemID: int) -> str:
+    execute(f"select * from GetBonName({itemID})")
+    return cur.fetchone()[0]
 
 
 def GetItemFrontend(barcode: str) -> PseudoItem.PseudoItem:
@@ -48,8 +49,8 @@ def GetItemFrontend(barcode: str) -> PseudoItem.PseudoItem:
 
     tags = GetItemTags(itemId)
     price, tax = GetItemPriceAndTax(itemId)
-    name, bon_name = GetItemNames(itemId)
-
+    name = GetItemName(itemId)
+    bon_name = GetItemBonName(itemId)
     item = PseudoItem.PseudoItem(name, bon_name, price, tax, tags)
 
     return item

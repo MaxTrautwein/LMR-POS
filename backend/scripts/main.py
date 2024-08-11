@@ -2,11 +2,10 @@ import logging
 import signals
 import db
 import register
-from flask import Flask, jsonify, request
+from flask import Flask, request
 from flask_cors import CORS
 from models import PseudoItem, BaseModel, BasketPosition
-from functools import wraps
-from typing import TypeVar
+from helpers import jsonToListOfModel
 
 logger = logging.getLogger('LMR_Log')
 logger.setLevel(logging.DEBUG)
@@ -60,26 +59,7 @@ app = Flask(__name__)
 CORS(app)
 
 init()
-T = TypeVar('T', bound='BaseModel')
 
-
-# Wrapper Function, so that we can Return Classes defiled in models
-# Each Model is a Child of BaseModel, allowing us to easily convert them to a Dict
-def jsonify_response(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        result = func(*args, **kwargs)
-        if isinstance(result, BaseModel.BaseModel):
-            return jsonify(result.to_dict())
-        return result
-
-    return wrapper
-
-
-# Parse Json to List of BaseModel Descendant
-# Currently used Basket when making a Sale
-def jsonToListOfModel(json: list[dict], model_class: T) -> list[T]:
-    return [model_class(**data) for data in json]
 
 
 # Init Register
@@ -105,3 +85,8 @@ def test():
         logger.info(position.getCNT())
 
     return content
+
+
+import api.PoS
+import api.Export
+import api.Admin

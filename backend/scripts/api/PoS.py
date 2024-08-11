@@ -1,9 +1,10 @@
-from main import app, getRegister, jsonify_response, jsonToListOfModel
+from main import app, getRegister
 from flask import request, jsonify, abort
 from datetime import datetime
 import logging
 import db
 import time
+from helpers import jsonify_response, jsonToListOfModel
 from models import PseudoItem, BasketPosition
 
 logger = logging.getLogger('LMR_Log')
@@ -17,6 +18,7 @@ logger = logging.getLogger('LMR_Log')
 @jsonify_response
 def GetItem() -> PseudoItem.PseudoItem:
     barcode = request.args.get('code')
+    logger.debug(barcode)
     return db.GetItemFrontend(barcode)
 
 

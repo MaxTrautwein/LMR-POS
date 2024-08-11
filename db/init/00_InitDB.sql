@@ -198,3 +198,26 @@ as $$
     end;
     $$ language plpgsql;
 
+
+CREATE OR REPLACE FUNCTION GetBonName(specificItemID int)
+returns table (bonName text)
+as $$
+    begin
+        return query select coalesce(g.bon_name,s.bon_name) from SpecificItem s, itemgroup g, specifictogroup sg
+                                                            where s.id = specificItemID and s.id = sg.specific
+                                                              and sg.itemgroup = g.id and g.deprecated = false
+                                                              and sg.deprecated is NULL;
+    end;
+    $$ language plpgsql;
+
+
+CREATE OR REPLACE FUNCTION GetCurrentSpecificItemGroup(specificItemID int)
+returns table (id integer)
+as $$
+    begin
+        return query select g.itemgroup from specifictogroup g where g.specific = specificItemID and
+                                                                     g.deprecated is null;
+    end;
+    $$ language plpgsql;
+
+
