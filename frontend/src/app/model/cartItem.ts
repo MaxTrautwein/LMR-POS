@@ -1,15 +1,13 @@
 
 export interface CartItem {
-
+  id: number;
   name: string;
   bonName: string;
-
   price: number;
   tax: number;
-
   tags: string[];
 
-  // Not sure how to best do that but that won't be transmitted
+  // Note: not set in "/item"
   cnt: number;
 
 }

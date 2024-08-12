@@ -7,7 +7,7 @@
       <div class="col"><strong>Gesamtpreis</strong></div>
     </div>
 
-    @for (item of cartService.getCart(); track $index){
+    @for (item of cartService.getCart(); track item.id){
       <app-cart-item [item]="item"></app-cart-item>
     }
 

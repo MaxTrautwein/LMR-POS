@@ -1,3 +1,5 @@
+import decimal
+
 from main import app, getRegister
 from flask import request, jsonify, abort
 from datetime import datetime
@@ -5,7 +7,7 @@ import logging
 import db
 import time
 from helpers import jsonify_response, jsonToListOfModel
-from models import PseudoItem, BasketPosition
+from models import CartItem, RegisterItem
 
 logger = logging.getLogger('LMR_Log')
 
@@ -16,7 +18,7 @@ logger = logging.getLogger('LMR_Log')
 # TODO Handle Invalid Data
 @app.get('/item')
 @jsonify_response
-def GetItem() -> PseudoItem.PseudoItem:
+def GetItem() -> CartItem.CartItem:
     barcode = request.args.get('code')
     logger.debug(barcode)
     return db.GetItemFrontend(barcode)
@@ -25,18 +27,18 @@ def GetItem() -> PseudoItem.PseudoItem:
 @app.route('/make_sale', methods=['POST'])
 def MakeSale():
 
-    content = jsonToListOfModel(request.json, BasketPosition.BasketPosition)
+    content = jsonToListOfModel(request.json, CartItem.CartItem)
     debug = request.args.get('debug', default=False)
 
-    SeparateBons = {}
+    SeparateBons: dict[decimal.Decimal, list[RegisterItem.Item]] = {}
 
     if len(content) == 0:
         logger.error("Attempted Sale with no Items")
         abort(400)
     # Convert Basket from Frontend into compatible format for Printing
     for item in content:
-        newItem = db.GetItemByID(item.getItemID())
-        newItem.SetCount(item.getCNT())
+        newItem = db.GetRegisterItemByID(item.getId())
+        newItem.SetCount(item.getCnt())
 
         tax = newItem.tax
         if tax not in SeparateBons:

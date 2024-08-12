@@ -3,6 +3,7 @@ import {CartComponent} from "./cart/cart.component";
 import {ControlsComponent} from "./controls/controls.component";
 import {CartItem} from "../model/cartItem";
 import {CartService} from "./cart.service";
+import {ApiService} from "./api.service";
 
 @Component({
   selector: 'app-pos',
@@ -17,21 +18,14 @@ import {CartService} from "./cart.service";
 export class PosComponent {
 
   handleBarcode(code: string){
-    this.getItem(code);
+    this.api.getItem(code).subscribe(item => {
+        item.cnt = 1
+        this.cartService.AddItem(item)
+    })
   }
 
 
-  async getItem(barcode: string){
-    let server = "http://localhost:5000"
-
-    let data = await fetch(server + '/item?code=' + barcode).then(res => res.json())
-    console.log(data);
-    let item: CartItem =  data;
-    item.cnt = 1
-    this.cartService.AddItem(item)
-  }
-
-  constructor(private cartService: CartService) {}
+  constructor(protected cartService: CartService, private api: ApiService) {}
 
 
   keyboardInput: string = "";

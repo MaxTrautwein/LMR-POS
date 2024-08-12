@@ -4,7 +4,7 @@ import db
 import register
 from flask import Flask, request
 from flask_cors import CORS
-from models import PseudoItem, BaseModel, BasketPosition
+from models import CartItem, BaseModel
 from helpers import jsonToListOfModel
 
 logger = logging.getLogger('LMR_Log')
@@ -69,22 +69,6 @@ Register = register.Register("/dev/ttyS0")
 def getRegister() -> register.Register:
     return Register
 
-
-@app.route('/test', methods=['POST'])
-def test():
-    content = request.json
-    logger.info(content)
-
-    data = jsonToListOfModel(content, BasketPosition.BasketPosition)
-    if len(data) == 0:
-        logger.error("Attempted Sale with no Items")
-    logger.info(data)
-
-    for position in data:
-        logger.info(position.getItemID())
-        logger.info(position.getCNT())
-
-    return content
 
 
 import api.PoS
