@@ -96,51 +96,64 @@ def SaveTransaction(Items: list[RegisterItem.Item]) -> tuple[int, any]:
     return trans_id, sale_date
 
 
+def GetItemPriceAndTaxAtPointInTime(itemID: int, pointInTime: any) -> tuple[decimal.Decimal, decimal.Decimal]:
+    execute("select * from GetSpecificItemPriceAndTax({}, {})".format(itemID, pointInTime))
+    return cur.fetchall()[0]
+
+
+def getItemIDsAndCntInTransaction(transactionID: int) -> list[tuple[int, int]]:
+    execute("select p.product, p.count from transaction_position tp, position p "
+            "where tp.pos = p.id and tp.trans = {}".format(transactionID))
+    return cur.fetchall()
+
+
 def getTotalAndTaxForTransaction(transactionID: int) -> tuple[decimal.Decimal, decimal.Decimal]:
-    print("TODO")
+    execute("select transaction.sale_date from transaction where id={};".format(transactionID))
+    sale_date = cur.fetchone()[0]
+    total = decimal.Decimal(0)
+    items = getItemIDsAndCntInTransaction(transactionID)
+    tax = decimal.Decimal(0)
+    for item in items:
+        price, _tax = GetItemPriceAndTaxAtPointInTime(item[0], sale_date)
+        total += item[1] * price
+        if tax == 0:
+            tax = _tax
+        elif tax != _tax:
+            logger.error("Tax mismatch")
+    return total, tax
 
 
 def GenerateTransactionExportSheet(minimumTransactionIdExclusive) -> list[SaleRecord.SaleRecord]:
     logger.info("Generate Export for Sale after " + str(minimumTransactionIdExclusive))
 
-    execute("SELECT extract(day  from transaction.sale_date) as \"Sale Day\"," +
-            "extract(month  from transaction.sale_date) as \"Sale Month\"," +
-            "extract(day  from clock_timestamp()) as \"Book Day\"," +
-            "extract(month  from clock_timestamp()) as \"Book Month\"," +
-            "concat('LMR Verkauf ID: ', transaction.id)," +
-            "transaction.id " +
-            "from transaction_position , position, transaction, items" +
-            " where transaction_position.trans = transaction.id and transaction_position.pos = position.id" +
-            " and transaction.id > {}".format(minimumTransactionIdExclusive) +
-            " and items.id = position.product"
-            " group by transaction.sale_date, transaction.id, items.tax order by transaction.sale_date;")
+    execute("select * from GetTransactionsAfter({})".format(minimumTransactionIdExclusive))
     data = cur.fetchall()
     ReturnData: list[SaleRecord.SaleRecord] = []
     for sale in data:
-        total, tax = getTotalAndTaxForTransaction(sale[5])
-        ReturnData.append(SaleRecord.SaleRecord(sale[5], sale[0], sale[1], sale[2], sale[3], sale[4], total, tax))
+        total, tax = getTotalAndTaxForTransaction(sale[4])
+        ReturnData.append(
+            SaleRecord.SaleRecord(sale[5], sale[0], sale[1], sale[2], sale[3], 'LMR Verkauf ID: ' + sale[4], total,
+                                  tax))
     return ReturnData
 
 
-def GetTransactionData(id):
-    execute(
-        "SELECT transaction.sale_date,position.count, coalesce(nullif(items.bon_name,''),items.name) ,position.total, items.tax from position,transaction_position,items, transaction " +
-        "where position.id =  transaction_position.pos and transaction.id = transaction_position.trans and items.id = position.product " +
-        "and transaction_position.trans = {}".format(id))
-    data = cur.fetchall()
+def GetTransactionData(transactionId: int):
+    execute("select t.sale_date from transaction t where t.id={};".format(transactionId))
+    date = cur.fetchone()[0]
     ReturnData = {
-        "date": data[0][0],
-        "id": id,
+        "date": date,
+        "id": transactionId,
         "items": []
     }
-    logger.debug("Response form SQL:")
-    logger.debug(data)
-    for sale in data:
+    items = getItemIDsAndCntInTransaction(transactionId)
+    for item in items:
+        price, tax = GetItemPriceAndTaxAtPointInTime(item[0], date)
+
         ReturnData["items"].append({
-            "name": sale[2],
-            "cnt": sale[1],
-            "price_per": sale[3] / sale[1],
-            "tax": sale[4]
+            "name": GetItemBonName(item[0]),
+            "cnt": item[1],
+            "price_per": price,
+            "tax": tax
         })
 
     return ReturnData

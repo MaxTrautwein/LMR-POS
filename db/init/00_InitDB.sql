@@ -221,3 +221,33 @@ as $$
     $$ language plpgsql;
 
 
+CREATE OR REPLACE FUNCTION GetSpecificItemPriceAndTax(specificItemID int, pointInTime timestamp)
+returns table (price numeric, tax numeric)
+as $$
+    begin
+        return query select h.price, t.amount from itempricehistory h, tax t, itemgroup g
+         where t.id = h.tax and g.id = h.item and
+               g.id = (select s.itemgroup from specifictogroup s where specific = specificItemID and
+                                    coalesce(s.deprecated, clock_timestamp() + interval '1 year') > (pointInTime)
+                              order by s.deprecated limit 1)
+               and
+               coalesce(h.deprecateddate, clock_timestamp() + interval '1 year') > (pointInTime) order by h.deprecateddate limit 1;
+    end;
+    $$ language plpgsql;
+
+
+CREATE OR REPLACE FUNCTION GetTransactionsAfter(transactionID int)
+returns table (saleDay numeric, saleMonth numeric, bookDay numeric, bookMonth numeric, id integer)
+as $$
+    begin
+        return query SELECT extract(day  from transaction.sale_date),
+            extract(month  from transaction.sale_date),
+            extract(day  from clock_timestamp()),
+            extract(month  from clock_timestamp()),
+            transaction.id
+            from transaction_position , position, transaction
+             where transaction_position.trans = transaction.id and transaction_position.pos = position.id
+             and transaction.id > transactionID
+             group by transaction.sale_date, transaction.id order by transaction.sale_date;
+    end;
+    $$ language plpgsql;
