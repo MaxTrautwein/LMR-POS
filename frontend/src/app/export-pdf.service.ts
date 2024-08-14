@@ -50,9 +50,11 @@ export class ExportPdfService {
       pageData.bookkeepingId = TransactionID - 1;
 
       this.pageLayout.at(-1)!.items.push(pageData);
+      this.pageLayout.at(-1)!.space -= reqSpace;
 
 
     }
+    console.log(this.pageLayout);
 
   }
   public getAndCopyBookkeepingString(){

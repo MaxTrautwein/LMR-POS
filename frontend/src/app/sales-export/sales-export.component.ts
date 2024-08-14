@@ -2,11 +2,14 @@ import {Component, ViewChild} from '@angular/core';
 import {CartService} from "../pos/cart.service";
 import {ApiService} from "../pos/api.service";
 import {ExportPdfService} from "../export-pdf.service";
+import {ExportPdfComponent} from "./export-pdf/export-pdf.component";
 
 @Component({
   selector: 'app-sales-export',
   standalone: true,
-  imports: [],
+  imports: [
+    ExportPdfComponent
+  ],
   templateUrl: './sales-export.component.html',
   styleUrl: './sales-export.component.css'
 })
@@ -32,7 +35,5 @@ export class SalesExportComponent {
   }
 
 
-
-
-
+  protected readonly window = window;
 }
