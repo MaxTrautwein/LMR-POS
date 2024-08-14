@@ -11,6 +11,8 @@ export interface ExportData {
   tax: number;
   saleDate: any;
   items: ExportItem[];
+  netto: number;
+  taxAmount: number;
 }
 
 export interface ExportPageData extends ExportData {

@@ -17,9 +17,9 @@ export class ExportPdfService {
 
   private CalculateExportTransactionSpace(SalePositions: number) {
     if (SalePositions <= 2) {
-      return 15;
+      return 17;
     }
-    return 15 + SalePositions - 2;
+    return 15 + SalePositions;
   }
 
   public prepareExportData(items: ExportData[], TransactionID: number) {

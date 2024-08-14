@@ -17,13 +17,13 @@
         <div class="col">
           <!-- For different tax Level we print different Bons as that allows use to easily book correctly-->
           @for (item of transaction.items; track $index){
-            {{ item.cnt }}x {{ item.name }} {{ item.price}}<br>
+            {{ item.cnt }}x "{{ item.name }}" {{ item.price}}€<br>
           }
           --------------<br>
           Gesamt: {{transaction.total}}€<br>
           <br>
-          Netto: {{ transaction.total /  (1.0 + transaction.items[0].tax)}} <br>
-          MWST ({{transaction.items[0].tax * 100}}%): {{ transaction.total - (transaction.total /  (1.0 + transaction.items[0].tax)) }} <br>
+          Netto: {{ transaction.netto}} <br>
+          MWST ({{transaction.tax * 100}}%): {{ transaction.taxAmount }}€ <br>
           -----------<br>
           Brutto: {{transaction.total}}€
         </div>

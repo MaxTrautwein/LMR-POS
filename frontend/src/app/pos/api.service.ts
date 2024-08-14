@@ -30,6 +30,10 @@ export class ApiService {
     return <Observable<ExportData[]>>this.http.get(this.server + "/Export" + "?id=" + id)
   }
 
+  public openDrawer(){
+    this.http.post(this.server + '/OpenDrawer',"").subscribe()
+  }
+
 
 
 

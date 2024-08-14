@@ -17,6 +17,8 @@ class ExportData(BaseModel):
         self.tax = tax
         self.saleDate = saleDate
         self.items = items
+        self.netto = round(total / (decimal.Decimal(1) + tax), 2)
+        self.taxAmount = total - self.netto
 
 
 

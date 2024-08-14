@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import {ApiService} from "../../pos/api.service";
 import {ExportPdfService} from "../../export-pdf.service";
 
 @Component({
@@ -14,7 +13,6 @@ export class ExportPdfComponent {
   constructor(protected exportPdf: ExportPdfService) {
 
   }
-
 
 
 }
