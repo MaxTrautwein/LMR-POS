@@ -1,1 +1,15 @@
-<p>sales-export works!</p>
+<div class="input-group mb-3 col">
+  <span  class="input-group-text">Sale ID (PoS Transaction ID)</span>
+  <input #SaleID type="number" id="SaleID" class="form-control" placeholder="Last Sale ID In the Google Sheet" aria-label="label" aria-describedby="desc">
+</div>
+<div class="input-group mb-3 col">
+  <span  class="input-group-text">Transaction ID (Bookkeeping Transaction ID)</span>
+  <input #TransactionID type="number" id="TransactionID" class="form-control" placeholder="Last Transaction Number in the Google Sheet" aria-label="label" aria-describedby="desc">
+</div>
+<button class="btn btn-primary" (click)="ExportData()" >Request Export</button>
+
+
+<div class="input-group mb-3">
+  <span class="input-group-text">Output</span>
+  <textarea style="height: 70vh;" id="Output" class="form-control" aria-label="With textarea">{{Output}}</textarea>
+</div>

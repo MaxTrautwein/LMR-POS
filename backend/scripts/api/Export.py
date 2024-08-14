@@ -2,15 +2,19 @@ from main import app
 from flask import request, jsonify, render_template
 import logging
 import db
+from models import ExportData
+from helpers import jsonify_response
 
 logger = logging.getLogger('LMR_Log')
 # Handles the Export of Purchases
 
 
-@app.get('/Export/Sheet')
-def GetExportSheet():
+@app.get('/Export')
+@jsonify_response
+def GetExport() -> list[ExportData.ExportData]:
     id = request.args.get('id')
-    return db.GenerateTransactionExportSheet(id)
+    data = db.GenerateTransactionExportSheet(id)
+    return data
 
 
 # There has to be a better way to do that

@@ -23,6 +23,17 @@ def jsonify_response(func):
         result = func(*args, **kwargs)
         if isinstance(result, BaseModel.BaseModel):
             return jsonify(result.to_dict())
-        return result
+
+        elif isinstance(result, list):
+            # Ensure every item in the list is properly serialized
+            serialized_list = []
+            for item in result:
+                if isinstance(item, BaseModel.BaseModel):
+                    serialized_list.append(item.to_dict())
+                else:
+                    serialized_list.append(item)
+            return jsonify(serialized_list)
+
+        return jsonify(result)
 
     return wrapper

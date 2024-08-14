@@ -1,9 +1,11 @@
 import decimal
+from datetime import datetime
 
 import psycopg2
 import logging
 import time
-from models import CartItem, RegisterItem, SaleRecord
+from models import CartItem, RegisterItem, ExportData
+from models.ExportItem import ExportItem
 
 logger = logging.getLogger('LMR_Log')
 
@@ -67,8 +69,7 @@ def GetRegisterItemByID(itemId: int) -> RegisterItem.Item:
 
 
 # Save a Transaction and Return the Time and ID
-# TODO: Replace any with the correct Type
-def SaveTransaction(Items: list[RegisterItem.Item]) -> tuple[int, any]:
+def SaveTransaction(Items: list[RegisterItem.Item]) -> tuple[int, datetime]:
     pos = []
 
     # Get Transaction ID
@@ -92,12 +93,11 @@ def SaveTransaction(Items: list[RegisterItem.Item]) -> tuple[int, any]:
     execute("update transaction set sale_date=clock_timestamp() where id={};".format(trans_id))
     commit()
     logger.info("Transaction Saved")
-    logger.info(type(sale_date))
     return trans_id, sale_date
 
 
-def GetItemPriceAndTaxAtPointInTime(itemID: int, pointInTime: any) -> tuple[decimal.Decimal, decimal.Decimal]:
-    execute("select * from GetSpecificItemPriceAndTax({}, {})".format(itemID, pointInTime))
+def GetItemPriceAndTaxAtPointInTime(itemID: int, pointInTime: datetime) -> tuple[decimal.Decimal, decimal.Decimal]:
+    execute("select * from GetSpecificItemPriceAndTax({}, '{}')".format(itemID, pointInTime))
     return cur.fetchall()[0]
 
 
@@ -123,39 +123,27 @@ def getTotalAndTaxForTransaction(transactionID: int) -> tuple[decimal.Decimal, d
     return total, tax
 
 
-def GenerateTransactionExportSheet(minimumTransactionIdExclusive) -> list[SaleRecord.SaleRecord]:
+def GenerateTransactionExportSheet(minimumTransactionIdExclusive) -> list[ExportData.ExportData]:
     logger.info("Generate Export for Sale after " + str(minimumTransactionIdExclusive))
 
     execute("select * from GetTransactionsAfter({})".format(minimumTransactionIdExclusive))
     data = cur.fetchall()
-    ReturnData: list[SaleRecord.SaleRecord] = []
-    for sale in data:
-        total, tax = getTotalAndTaxForTransaction(sale[4])
+    ReturnData: list[ExportData.ExportData] = []
+    for saleDay, saleMonth, exportDay, exportMonth, transactionId in data:
+        total, tax = getTotalAndTaxForTransaction(transactionId)
+        execute("select t.sale_date from transaction t where t.id={};".format(transactionId))
+        date = cur.fetchone()[0]
+        logger.debug(type(data))
+
+        exportItems: list[ExportItem] = []
+        items = getItemIDsAndCntInTransaction(transactionId)
+        for item in items:
+            price, tax = GetItemPriceAndTaxAtPointInTime(item[0], date)
+            exportItems.append(ExportItem(GetItemBonName(item[0]),item[1],price,tax))
+        logger.warning(type(date.isoformat()))
         ReturnData.append(
-            SaleRecord.SaleRecord(sale[5], sale[0], sale[1], sale[2], sale[3], 'LMR Verkauf ID: ' + sale[4], total,
-                                  tax))
-    return ReturnData
-
-
-def GetTransactionData(transactionId: int):
-    execute("select t.sale_date from transaction t where t.id={};".format(transactionId))
-    date = cur.fetchone()[0]
-    ReturnData = {
-        "date": date,
-        "id": transactionId,
-        "items": []
-    }
-    items = getItemIDsAndCntInTransaction(transactionId)
-    for item in items:
-        price, tax = GetItemPriceAndTaxAtPointInTime(item[0], date)
-
-        ReturnData["items"].append({
-            "name": GetItemBonName(item[0]),
-            "cnt": item[1],
-            "price_per": price,
-            "tax": tax
-        })
-
+            ExportData.ExportData(transactionId, saleDay, saleMonth, exportDay, exportMonth,
+                                  f"LMR Verkauf ID:  {transactionId}", total, tax, date.isoformat(), exportItems))
     return ReturnData
 
 
