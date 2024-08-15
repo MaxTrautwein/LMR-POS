@@ -63,4 +63,4 @@ def MakeSale():
     getRegister().open()
 
     # What if any should we return !?
-    return jsonify(content)
+    return jsonify("Done")

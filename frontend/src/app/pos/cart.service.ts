@@ -69,8 +69,8 @@ export class CartService {
 
   public makeSale(){
     this.api.makeSale(this.items)
-    // TODO: TEMP for Debugging
-    // this.EmptyCart()
+
+    this.EmptyCart()
   }
 
 }
