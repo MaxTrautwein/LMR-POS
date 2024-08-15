@@ -41,7 +41,10 @@ def GetItemName(itemID: int) -> str:
 
 def GetItemBonName(itemID: int) -> str:
     execute(f"select * from GetBonName({itemID})")
-    return cur.fetchone()[0]
+    bon_name = cur.fetchone()[0]
+    if bon_name is None or bon_name == '':
+        bon_name = GetItemName(itemID)
+    return bon_name
 
 
 def GetItemFrontend(barcode: str) -> CartItem.CartItem:
@@ -61,9 +64,6 @@ def GetItemFrontend(barcode: str) -> CartItem.CartItem:
 def GetRegisterItemByID(itemId: int) -> RegisterItem.Item:
     price, tax = GetItemPriceAndTax(itemId)
     bon_name = GetItemBonName(itemId)
-
-    if bon_name is None or bon_name == '':
-        bon_name = GetItemName(itemId)
 
     return RegisterItem.Item(itemId, bon_name, price, tax, 1)
 
@@ -143,7 +143,8 @@ def GenerateTransactionExportSheet(minimumTransactionIdExclusive) -> list[Export
         logger.warning(type(date.isoformat()))
         ReturnData.append(
             ExportData.ExportData(transactionId, saleDay, saleMonth, exportDay, exportMonth,
-                                  f"LMR Verkauf ID:  {transactionId}", total, tax, date.isoformat(), exportItems))
+                                  f"LMR Verkauf ID:  {transactionId}", total, tax,
+                                  date.isoformat(), exportItems))
     return ReturnData
 
 
