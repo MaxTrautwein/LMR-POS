@@ -17,11 +17,46 @@ import {ApiService} from "./api.service";
 })
 export class PosComponent {
 
-  handleBarcode(code: string){
+  private handleNewItem(code: string): void {
     this.api.getItem(code).subscribe(item => {
-        item.cnt = 1
-        this.cartService.AddItem(item)
+      item.cnt = 1
+      this.cartService.AddItem(item)
     })
+  }
+
+  private handelBarcodeControls(code: string): void {
+    switch(code) {
+      case "LMR-POS-cancel":
+        this.cartService.RemoveLastItem()
+        break
+      case "LMR-POS-Clear":
+        this.cartService.EmptyCart()
+        break
+      case "LMR-POS-Sale":
+        this.cartService.makeSale()
+        break
+      case "LMR-POS-Logout":
+        // Logout is not Implemented, so ignore it for now
+        break
+    }
+  }
+
+  private handelItemCountControls(code: string): void {
+    const amount = Number(code.replace("LMR-ADD-",""));
+    this.cartService.UpdateLastItemCnt(amount)
+  }
+
+  private handleBarcode(code: string){
+    code = code.replace("ß","-") // Codes where printed with 'ß' instead of '-'
+
+    if (code.startsWith("LMR-POS")){
+      this.handelBarcodeControls(code)
+    }else if (code.startsWith("LMR-ADD-")){
+      this.handelItemCountControls(code)
+    }else{
+      // Regular Barcode
+      this.handleNewItem(code)
+    }
   }
 
 

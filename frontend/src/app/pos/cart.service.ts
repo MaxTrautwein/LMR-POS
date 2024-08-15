@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
 import {CartItem} from "../model/cartItem";
+import {ApiService} from "./api.service";
 
 @Injectable({
   providedIn: 'root'
 })
 export class CartService {
 
-  constructor() { }
+  constructor(private api: ApiService) { }
 
   items: CartItem[] = new Array<CartItem>();
   total: number = 0;
@@ -53,8 +54,9 @@ export class CartService {
     this.recalculatePrice();
   }
 
+  // Offset by Input
   public UpdateLastItemCnt(count: number){
-    if (this.items.length > 0 || count == 0) {
+    if (this.items.length === 0 || count === 0) {
       return;
     }
     let item: CartItem = this.items.pop()!
@@ -65,5 +67,10 @@ export class CartService {
     this.recalculatePrice();
   }
 
+  public makeSale(){
+    this.api.makeSale(this.items)
+    // TODO: TEMP for Debugging
+    // this.EmptyCart()
+  }
 
 }

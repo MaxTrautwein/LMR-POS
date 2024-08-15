@@ -11,14 +11,6 @@ import {ApiService} from "../api.service";
 })
 export class ControlsComponent {
 
-  constructor(protected cartService: CartService, private api: ApiService) {}
-
-
-  protected makeSale(){
-    this.api.makeSale(this.cartService.getCart())
-    // TODO: TEMP for Debugging
-    // this.cartService.EmptyCart()
-  }
-
+  constructor(protected cartService: CartService) {}
 
 }

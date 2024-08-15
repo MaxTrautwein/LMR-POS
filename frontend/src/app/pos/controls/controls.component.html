@@ -8,5 +8,5 @@
   <button type="button" class="btn btn-UseWidth btn-secondary" (click)="cartService.EmptyCart()">Warenkorb leeren</button>
 </div>
 <div class="btnDivBox" >
-  <button type="button" class="btn btn-UseWidth btn-success" (click)="makeSale()">Verkauf buchen</button>
+  <button type="button" class="btn btn-UseWidth btn-success" (click)="this.cartService.makeSale()">Verkauf buchen</button>
 </div>
