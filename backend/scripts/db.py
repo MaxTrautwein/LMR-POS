@@ -1,142 +1,152 @@
+import decimal
+from datetime import datetime
+
 import psycopg2
 import logging
 import time
-import Interfaces
+from models import CartItem, RegisterItem, ExportData
+from models.ExportItem import ExportItem
 
 logger = logging.getLogger('LMR_Log')
 
 
-def GetItemID(barcode):
-    execute("select item from barcodes where barcode='{}';".format(barcode))
+# Get SpecificItem ID by Barcode
+def GetItemID(barcode: str) -> int:
+    execute(f"select * from GetSpecificItemID('{barcode}')")
     return cur.fetchone()[0]
 
-def GetItemFrontend(barcode):
+
+# TODO Update for V5
+# Get all Tags linked to that pseudo Item
+def GetItemTags(itemID: int) -> list[str]:
+    tags: list[str] = []
+    execute(f"select * from GetLinkedTags({itemID})")
+    tagRes = cur.fetchall()
+    for tag in tagRes:
+        tags.append(tag[0])
+    return tags
+
+
+# Returns the Price and Tax of a Pseudo Item
+def GetItemPriceAndTax(itemID: int) -> tuple[decimal.Decimal, decimal.Decimal]:
+    execute(f"select * from GetCurrentSpecificItemPriceAndTax({itemID})")
+    return cur.fetchall()[0]
+
+
+# Get the Name and bon Name of a Pseudo Item
+def GetItemName(itemID: int) -> str:
+    execute(f"select name from itemgroup where id = (select id from GetCurrentSpecificItemGroup({itemID}))")
+    return cur.fetchone()[0]
+
+
+def GetItemBonName(itemID: int) -> str:
+    execute(f"select * from GetBonName({itemID})")
+    bon_name = cur.fetchone()[0]
+    if bon_name is None or bon_name == '':
+        bon_name = GetItemName(itemID)
+    return bon_name
+
+
+def GetItemFrontend(barcode: str) -> CartItem.CartItem:
     # Get the Item ID by barcode
-    id = GetItemID(barcode)
-    # Get the Item Data
-    execute("select name, price, manufacturer, color,  details, size, tax from Items where id={};".format(id))
-    name, price, manufacturer, color,  details, size, tax = cur.fetchone()
-    #return Item(id, name, price, manufacturer, color,  details, size, tax)
-    return {"id":id,
-            "name":name,
-            "manufacturer":manufacturer,
-            "color":color,
-            "size":size,
-            "details":details,
-            "price":price,
-            "tax":tax} 
+    itemId = GetItemID(barcode)
+
+    tags = GetItemTags(itemId)
+    price, tax = GetItemPriceAndTax(itemId)
+    name = GetItemName(itemId)
+    bon_name = GetItemBonName(itemId)
+    item = CartItem.CartItem(itemId, name, bon_name, price, tax, tags)
+
+    return item
 
 
-#Get a Instance of one Item by it's ID
-def GetItemByID(id):
-    execute("select name, price, manufacturer, color,  details, size, tax , coalesce(nullif(bon_name,''),name) from Items where id={};".format(id))
-    name, price, manufacturer, color,  details, size, tax, bon_name = cur.fetchone()
-    # TODO maybe Append Interfaces.Item with name as the name & bon_name Logic is now handeled as SQL
-    return Interfaces.Item(id,bon_name,price,manufacturer,color,details,size,tax,1)
+# Get an Instance of one RegisterItem by its ID
+def GetRegisterItemByID(itemId: int) -> RegisterItem.Item:
+    price, tax = GetItemPriceAndTax(itemId)
+    bon_name = GetItemBonName(itemId)
 
-#Save a Transaction and Return the ID
-def SaveTransaction(Items):
+    return RegisterItem.Item(itemId, bon_name, price, tax, 1)
+
+
+# Save a Transaction and Return the Time and ID
+def SaveTransaction(Items: list[RegisterItem.Item]) -> tuple[int, datetime]:
     pos = []
 
-    #Get Transaction ID
-    #TODO Add user System
-    execute("insert into transaction (personal, sale_date) VALUES ('{}',clock_timestamp()) returning id, sale_date;".format("Max Musterman"))
+    # Get Transaction ID
+    # TODO Add user System
+    execute(
+        "insert into transaction (personal, sale_date) VALUES ('{}',clock_timestamp()) returning id, sale_date;".format(
+            "Max Musterman"))
     trans_id, sale_date = cur.fetchone()
     commit()
     for item in Items:
-            #Create Position
-            count = item.count
-            execute("insert into position (product, count, total) VALUES ({},{},{}) returning id;"
-                    .format( item.id,count, item.price * count))
-            pos.append(cur.fetchone()[0])
-            commit()
+        # Create Position
+        count = item.count
+        execute("insert into position (product, count) VALUES ({},{}) returning id;"
+                .format(item.id, count))
+        pos.append(cur.fetchone()[0])
+        commit()
     for pos_id in pos:
-        #Create Links
-        execute("insert into transaction_position (pos, trans) VALUES ({},{});".format(pos_id,trans_id))
+        # Create Links
+        execute("insert into transaction_position (pos, trans) VALUES ({},{});".format(pos_id, trans_id))
         commit()
     execute("update transaction set sale_date=clock_timestamp() where id={};".format(trans_id))
     commit()
+    logger.info("Transaction Saved")
     return trans_id, sale_date
 
-def AddNewItem(Data):
-    name = Data["name"]
-    cnt = Data["cnt"]
-    price = Data["price"]
-    manufacturer = Data["manufacturer"]
-    color = Data["color"]
-    min_cnt = Data["min_cnt"]
-    details = Data["details"]
-    size = Data["size"]
-    bon_name = Data["bon_name"]
-    Barcodes = Data["Barcodes"]
-    #Create the item
-    execute("insert into Items(name, cnt, price, manufacturer, color, min_cnt, details, size, bon_name) " +
-            "values ('{}',{},{},'{}','{}',{},'{}','{}','{}') returning id;"
-            .format(name, cnt, price, manufacturer, color, min_cnt, details, size, bon_name))
-    id = cur.fetchone()[0]
-    commit()
 
-    #Link the Barcodes
-    for Barcode in Barcodes:
-        execute("insert into barcodes (barcode, item) values ('{}',{})"
-                .format(Barcode,id))
-        commit()
-    #Create the Internal Barcode:
-    execute("insert into barcodes (barcode, item) values ('{}',{})"
-            .format(f"LMR-{(id-1):04}" ,id))
-    commit()
+def GetItemPriceAndTaxAtPointInTime(itemID: int, pointInTime: datetime) -> tuple[decimal.Decimal, decimal.Decimal]:
+    execute("select * from GetSpecificItemPriceAndTax({}, '{}')".format(itemID, pointInTime))
+    return cur.fetchall()[0]
 
-def GenerateTransactionExportSheet(id):
-    logger.info("Generate Export far Salse after " + str(id))
-    execute("SELECT extract(day  from transaction.sale_date) as \"Sale Day\"," +
-       "extract(month  from transaction.sale_date) as \"Sale Month\"," +
-       "extract(day  from clock_timestamp()) as \"Book Day\"," +
-       "extract(month  from clock_timestamp()) as \"Book Month\"," +
-       "concat('LMR Verkauf ID: ', transaction.id)," +
-       "sum(position.total)," +
-       "transaction.id, " +
-       "items.tax " + 
-       "from transaction_position , position, transaction, items" +
-        " where transaction_position.trans = transaction.id and transaction_position.pos = position.id" +
-        " and transaction.id > {}".format(id) +
-        " and items.id = position.product"
-        " group by transaction.sale_date, transaction.id, items.tax order by transaction.sale_date;")
+
+def getItemIDsAndCntInTransaction(transactionID: int) -> list[tuple[int, int]]:
+    execute("select p.product, p.count from transaction_position tp, position p "
+            "where tp.pos = p.id and tp.trans = {}".format(transactionID))
+    return cur.fetchall()
+
+
+def getTotalAndTaxForTransaction(transactionID: int) -> tuple[decimal.Decimal, decimal.Decimal]:
+    execute("select transaction.sale_date from transaction where id={};".format(transactionID))
+    sale_date = cur.fetchone()[0]
+    total = decimal.Decimal(0)
+    items = getItemIDsAndCntInTransaction(transactionID)
+    tax = decimal.Decimal(0)
+    for item in items:
+        price, _tax = GetItemPriceAndTaxAtPointInTime(item[0], sale_date)
+        total += item[1] * price
+        if tax == 0:
+            tax = _tax
+        elif tax != _tax:
+            logger.error("Tax mismatch")
+    return total, tax
+
+
+def GenerateTransactionExportSheet(minimumTransactionIdExclusive) -> list[ExportData.ExportData]:
+    logger.info("Generate Export for Sale after " + str(minimumTransactionIdExclusive))
+
+    execute("select * from GetTransactionsAfter({})".format(minimumTransactionIdExclusive))
     data = cur.fetchall()
-    ReturnData = []
-    for sale in data:
-        ReturnData.append({
-            "SaleID": sale[6],
-            "SaleDay":sale[0],
-            "SaleMonth":sale[1],
-            "EntryDay":sale[2],
-            "EntryMonth":sale[3],
-            "Desc":sale[4],
-            "Amount":sale[5],
-            "Tax":sale[7]
-        })
+    ReturnData: list[ExportData.ExportData] = []
+    for saleDay, saleMonth, exportDay, exportMonth, transactionId in data:
+        total, tax = getTotalAndTaxForTransaction(transactionId)
+        execute("select t.sale_date from transaction t where t.id={};".format(transactionId))
+        date = cur.fetchone()[0]
+        logger.debug(type(data))
+
+        exportItems: list[ExportItem] = []
+        items = getItemIDsAndCntInTransaction(transactionId)
+        for item in items:
+            price, tax = GetItemPriceAndTaxAtPointInTime(item[0], date)
+            exportItems.append(ExportItem(GetItemBonName(item[0]),item[1],price,tax))
+        logger.warning(type(date.isoformat()))
+        ReturnData.append(
+            ExportData.ExportData(transactionId, saleDay, saleMonth, exportDay, exportMonth,
+                                  f"LMR Verkauf ID:  {transactionId}", total, tax,
+                                  date.isoformat(), exportItems))
     return ReturnData
 
-def GetTransactionData(id):
-    execute("SELECT transaction.sale_date,position.count, coalesce(nullif(items.bon_name,''),items.name) ,position.total, items.tax from position,transaction_position,items, transaction "+
-    "where position.id =  transaction_position.pos and transaction.id = transaction_position.trans and items.id = position.product " +
-    "and transaction_position.trans = {}".format(id))
-    data = cur.fetchall()
-    ReturnData = {
-        "date":data[0][0],
-        "id":id,
-        "items":[]
-    }
-    logger.debug("Response form SQL:")
-    logger.debug(data)
-    for sale in data:
-        ReturnData["items"].append({
-            "name":sale[2],
-            "cnt":sale[1],
-            "price_per":sale[3] / sale[1],
-            "tax":sale[4]
-        })
-
-    return ReturnData
 
 class NetworkError(Exception):
     pass

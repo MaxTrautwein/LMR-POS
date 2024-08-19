@@ -1,10 +1,12 @@
 import datetime
+from decimal import Decimal
 from os.path import exists
-from Interfaces import Item
+from models.RegisterItem import Item
 import time
 import logging
 
 logger = logging.getLogger('LMR_Log')
+
 
 # Exceptions
 class TransmitError(Exception):
@@ -91,14 +93,14 @@ class Register:
         if not items:
             raise NoItemsError
         cart = ''
-        total: float = 0
-        tax: float = items[0].tax
+        total: Decimal = 0
+        tax: Decimal = items[0].tax
         # generate item string
         for item in items:
             # check for correct tax rate
             if item.tax != tax:
                 raise InconsistentTaxError
-            taxFactor : float = 1.0 + tax
+            taxFactor: Decimal = Decimal(1.0) + tax
             taxPrecent = f"{int(tax * 100)}%"
 
             # line length = 42 chars -> 3 margin, 9 cnt, 17 name, 10 price, 3 margin
@@ -109,12 +111,12 @@ class Register:
             cart += to_hex('   ') + '0D'
 
             # increase cart value
-            total += float(item.price * item.count)
+            total += item.price * item.count
 
         self._transmit(
             # start flashing to memory
             '1D 3A 01'
-            
+
             # centered Header
             '1B 61 01' +
             to_hex('LMR HS-Esslingen') + '0D' +
