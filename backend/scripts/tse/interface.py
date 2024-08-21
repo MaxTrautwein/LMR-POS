@@ -1,6 +1,6 @@
 import base64
 import json
-from Helpertypes import Prozesstyp
+from Helpertypes import ProcessTyp, ProcessTypBon
 
 import websocket
 from queue import Queue
@@ -39,23 +39,26 @@ class DN_TSE:
         cmd.update(options)
         self.ws.send(json.dumps(cmd))
 
-    # TODO: Implement Data (Note: Data is limited to 16000 chars but I doubt we could ever crack that)
-    def StartTransaction(self, typ: Prozesstyp, password: str, data: any) -> None:
+    # Note According to dsfinv_k_v_2_4 Typ & Data MUST be Empty at StartTransaction
+    # TODO: Check if we should omit them or send them as empty
+    def StartTransaction(self, process: ProcessTypBon, password: str, data: any) -> None:
         print("Starting Transaction")
         self.sendCommand("StartTransaction", {
             "ClientID": self.ClientID,
-            "Typ": str(typ),
-            "Password": base64.b64encode(password.encode('utf-8')).decode('utf-8'),
-            "Data": {"TODO": "A Json Object of the Data"}
+            # "Typ": str(process.name),
+            "Password": base64.b64encode(password.encode('utf-8')).decode('utf-8')  #,
+            # "Data": {"TODO": "A Json Object of the Data"}
         })
 
-    # TODO: Implement Data (Note: Data is limited to 16000 chars but I doubt we could ever crack that)
-    def FinishTransaction(self, typ: Prozesstyp, password: str, data: any, transactionID: int) -> None:
+    # Note: According to dsfinv_k_v_2_4 for ProcessTypBon, UpdateTransaction SHALL NOT be used
+
+    # Note: Data is limited to 16000 chars but I doubt we could ever crack that
+    def FinishTransaction(self, process: ProcessTypBon, password: str, data: any, transactionID: int) -> None:
         print("Ending Transaction")
         self.sendCommand("FinishTransaction", {
             "ClientID": self.ClientID,
-            "Typ": str(typ),
+            "Typ": str(process.name),
             "Password": base64.b64encode(password.encode('utf-8')).decode('utf-8'),
-            "Data": {"TODO": "A Json Object of the Data"},
+            "Data": process.getData(),
             "TransactionNumber": transactionID
         })
