@@ -1,6 +1,7 @@
 import base64
 import json
 from Helpertypes import ProcessTyp, ProcessTypBon
+from events import *
 
 import websocket
 from queue import Queue
@@ -14,13 +15,27 @@ class DN_TSE:
                                          on_open=self.on_open,
                                          on_message=self.on_message,
                                          on_close=self.on_close)
+        self.events: list[DN_Events] = [
+            DeviceStatus("DeviceStatus")
+        ]
+
 
     def on_open(self, ws):
         print("WebSocket opened")
 
+
     def on_message(self, ws, message):
         print("Message received")
         print(message)
+
+        # Handle Events if Contained
+        event = message.get("event")
+        if event is not None:
+            for eventHandler in self.events:
+                if eventHandler.ShouldHandle(event):
+                    eventHandler.Handle(message)
+
+
 
     # May need to look into ways to reconnect as we NEED that connection
     # Will be a problem if the Service closes the connection
@@ -41,7 +56,7 @@ class DN_TSE:
 
     # Note According to dsfinv_k_v_2_4 Typ & Data MUST be Empty at StartTransaction
     # TODO: Check if we should omit them or send them as empty
-    def StartTransaction(self, process: ProcessTypBon, password: str, data: any) -> None:
+    def StartTransaction(self, process: ProcessTypBon, password: str) -> None:
         print("Starting Transaction")
         self.sendCommand("StartTransaction", {
             "ClientID": self.ClientID,
@@ -53,7 +68,7 @@ class DN_TSE:
     # Note: According to dsfinv_k_v_2_4 for ProcessTypBon, UpdateTransaction SHALL NOT be used
 
     # Note: Data is limited to 16000 chars but I doubt we could ever crack that
-    def FinishTransaction(self, process: ProcessTypBon, password: str, data: any, transactionID: int) -> None:
+    def FinishTransaction(self, process: ProcessTypBon, password: str, transactionID: int) -> None:
         print("Ending Transaction")
         self.sendCommand("FinishTransaction", {
             "ClientID": self.ClientID,
