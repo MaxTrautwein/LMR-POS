@@ -313,3 +313,10 @@ class DN_TSE:
             "Data": process.getData(),
             "TransactionNumber": transactionID
         })
+
+    # Note: This will never be Sent with the Admin PW from this SW, as that would consume Signatures and Log Space
+    # This May be used via the Web Interface or CLI During De-init
+    # Here it may be used to check the Status and detect Transactions that where failed to be closed
+    def GetDeviceStatus(self):
+        print("Getting Device Status")
+        self.sendCommand("GetDeviceStatus", {"ClientID": self.ClientID})
