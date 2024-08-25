@@ -1,0 +1,15 @@
+i {
+  font-size: 2.5em;
+}
+
+.bi-check-circle {
+  color: green;
+}
+
+.bi-sign-stop-fill{
+  color: darkred;
+}
+
+.bi-exclamation-circle-fill{
+  color: darkorange;
+}

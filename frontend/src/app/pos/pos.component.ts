@@ -4,13 +4,15 @@ import {ControlsComponent} from "./controls/controls.component";
 import {CartItem} from "../model/cartItem";
 import {CartService} from "./cart.service";
 import {ApiService} from "./api.service";
+import {StatusComponent} from "./status/status.component";
 
 @Component({
   selector: 'app-pos',
   standalone: true,
   imports: [
     CartComponent,
-    ControlsComponent
+    ControlsComponent,
+    StatusComponent
   ],
   templateUrl: './pos.component.html',
   styleUrl: './pos.component.css'
