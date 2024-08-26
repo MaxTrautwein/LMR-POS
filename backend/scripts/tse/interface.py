@@ -17,7 +17,21 @@ class DN_TSE:
                                          on_message=self.on_message,
                                          on_close=self.on_close)
         self.events: list[DN_Events] = [
-            DeviceStatus("DeviceStatus")
+            DeviceStatus(),
+            SelfTestStatus(),
+            MemoryStatus(),
+            SignatureStatus(),
+            CertificateStatus(),
+            ExportStart(),
+            ExportProgress(),
+            ExportEnd(),
+            PerformSelfTestStart(),
+            PerformSelfTestEnd(),
+            UpdateCryptoFirmwareStart(),
+            UpdateCryptoFirmwareProgress(),
+            UpdateCryptoFirmwareEnd(),
+            ExportRemoveStatus(),
+            ExportDataStatus()
         ]
 
         self.TSE_Errors: list[DN_TSE_Error] = [

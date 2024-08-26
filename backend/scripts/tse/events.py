@@ -16,8 +16,8 @@ class DN_Events:
 # TODO: Handle the Blocking in case of Not Ready
 # Expose the current Status to the Operator
 class DeviceStatus(DN_Events):
-    def __init__(self, EventName):
-        DN_Events.__init__(self, EventName)
+    def __init__(self):
+        DN_Events.__init__(self, "DeviceStatus")
 
     def Handle(self, eventMsg: json):
         print(eventMsg)
@@ -41,8 +41,8 @@ class DeviceStatus(DN_Events):
 # TODO: Handle the Blocking in case of Not Ready
 # Expose the current Status to the Operator
 class SelfTestStatus(DN_Events):
-    def __init__(self, EventName):
-        DN_Events.__init__(self, EventName)
+    def __init__(self):
+        DN_Events.__init__(self, "SelfTestStatus")
 
     def Handle(self, eventMsg: json):
         print(eventMsg)
@@ -66,8 +66,8 @@ class SelfTestStatus(DN_Events):
 # TODO: Warn The User in case of nearfull
 # Expose the current Status to the Operator
 class MemoryStatus(DN_Events):
-    def __init__(self, EventName):
-        DN_Events.__init__(self, EventName)
+    def __init__(self):
+        DN_Events.__init__(self, "MemoryStatus")
 
     def Handle(self, eventMsg: json):
         print(eventMsg)
@@ -85,8 +85,8 @@ class MemoryStatus(DN_Events):
 # TODO: Warn The User in case of nearfull
 # Expose the current Status to the Operator
 class SignatureStatus(DN_Events):
-    def __init__(self, EventName):
-        DN_Events.__init__(self, EventName)
+    def __init__(self):
+        DN_Events.__init__(self, "SignatureStatus")
 
     def Handle(self, eventMsg: json):
         print(eventMsg)
@@ -104,8 +104,8 @@ class SignatureStatus(DN_Events):
 # TODO: Warn The User in case of nearfull
 # Expose the current Status to the Operator
 class CertificateStatus(DN_Events):
-    def __init__(self, EventName):
-        DN_Events.__init__(self, EventName)
+    def __init__(self):
+        DN_Events.__init__(self, "CertificateStatus")
 
     def Handle(self, eventMsg: json):
         print(eventMsg)
@@ -122,8 +122,8 @@ class CertificateStatus(DN_Events):
 
 # Expose the current Status to the Operator
 class ExportStart(DN_Events):
-    def __init__(self, EventName):
-        DN_Events.__init__(self, EventName)
+    def __init__(self):
+        DN_Events.__init__(self, "ExportStart")
 
     def Handle(self, eventMsg: json):
         print(eventMsg)
@@ -131,8 +131,8 @@ class ExportStart(DN_Events):
 
 # Expose the current Status to the Operator
 class ExportProgress(DN_Events):
-    def __init__(self, EventName):
-        DN_Events.__init__(self, EventName)
+    def __init__(self):
+        DN_Events.__init__(self, "ExportProgress")
 
     def Handle(self, eventMsg: json):
         print(eventMsg)
@@ -140,8 +140,8 @@ class ExportProgress(DN_Events):
 
 # Expose the current Status to the Operator
 class ExportEnd(DN_Events):
-    def __init__(self, EventName):
-        DN_Events.__init__(self, EventName)
+    def __init__(self):
+        DN_Events.__init__(self, "ExportEnd")
 
     def Handle(self, eventMsg: json):
         print(eventMsg)
@@ -150,8 +150,8 @@ class ExportEnd(DN_Events):
 # TODO: Block Actions until Completed
 # Expose the current Status to the Operator
 class PerformSelfTestStart(DN_Events):
-    def __init__(self, EventName):
-        DN_Events.__init__(self, EventName)
+    def __init__(self):
+        DN_Events.__init__(self, "PerformSelfTestStart")
 
     def Handle(self, eventMsg: json):
         print(eventMsg)
@@ -162,8 +162,8 @@ class PerformSelfTestStart(DN_Events):
 # TODO: In the Doc there is a Whitespace in front of the "PerformSelfTestEnd"
 # like " PerformSelfTestEnd"; Uncertain if that is a Mistake
 class PerformSelfTestEnd(DN_Events):
-    def __init__(self, EventName):
-        DN_Events.__init__(self, EventName)
+    def __init__(self):
+        DN_Events.__init__(self, "PerformSelfTestEnd")
 
     def Handle(self, eventMsg: json):
         print(eventMsg)
@@ -172,8 +172,8 @@ class PerformSelfTestEnd(DN_Events):
 # TODO: Block Actions until Completed
 # Expose the current Status to the Operator
 class UpdateCryptoFirmwareStart(DN_Events):
-    def __init__(self, EventName):
-        DN_Events.__init__(self, EventName)
+    def __init__(self):
+        DN_Events.__init__(self, "UpdateCryptoFirmwareStart")
 
     def Handle(self, eventMsg: json):
         print(eventMsg)
@@ -184,8 +184,8 @@ class UpdateCryptoFirmwareStart(DN_Events):
 # TODO: Block Actions until Completed
 # Expose the current Status to the Operator
 class UpdateCryptoFirmwareProgress(DN_Events):
-    def __init__(self, EventName):
-        DN_Events.__init__(self, EventName)
+    def __init__(self):
+        DN_Events.__init__(self, "UpdateCryptoFirmwareProgress")
 
     def Handle(self, eventMsg: json):
         print(eventMsg)
@@ -194,8 +194,8 @@ class UpdateCryptoFirmwareProgress(DN_Events):
 # TODO: Block Actions until Completed
 # Expose the current Status to the Operator
 class UpdateCryptoFirmwareEnd(DN_Events):
-    def __init__(self, EventName):
-        DN_Events.__init__(self, EventName)
+    def __init__(self):
+        DN_Events.__init__(self, "UpdateCryptoFirmwareEnd")
 
     def Handle(self, eventMsg: json):
         print(eventMsg)
@@ -204,8 +204,8 @@ class UpdateCryptoFirmwareEnd(DN_Events):
 # TODO: Block Actions if busy
 # Expose the current Status to the Operator
 class ExportRemoveStatus(DN_Events):
-    def __init__(self, EventName):
-        DN_Events.__init__(self, EventName)
+    def __init__(self):
+        DN_Events.__init__(self, "ExportRemoveStatus")
 
     def Handle(self, eventMsg: json):
         print(eventMsg)
@@ -220,8 +220,8 @@ class ExportRemoveStatus(DN_Events):
 # TODO: Block Actions if busy
 # Expose the current Status to the Operator
 class ExportDataStatus(DN_Events):
-    def __init__(self, EventName):
-        DN_Events.__init__(self, EventName)
+    def __init__(self):
+        DN_Events.__init__(self, "ExportDataStatus")
 
     def Handle(self, eventMsg: json):
         print(eventMsg)
